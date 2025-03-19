@@ -1,0 +1,30 @@
+{
+  // Python specific settings
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  
+  // Ruff settings
+  "ruff.organizeImports": true,
+  "ruff.fixAll": true,
+  
+  // Exclude files and folders
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true
+  },
+  
+  // Editor settings for better Python coding
+  "editor.rulers": [88, 120],
+  "editor.wordWrap": "off",
+  "editor.renderWhitespace": "all",
+  "editor.guides.indentation": true,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 4
+} 
