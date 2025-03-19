@@ -60,17 +60,15 @@ class Handler:
         logger.info("on_text(%s): %s", data.id, data.text)
         logger.debug("%s", data.model_dump_json(indent=2))
         message = db.MessageText.from_model(data)
-        history = message.latest_messages()
+        history = message.latest()
 
         result = await self.agent.run(
             user_prompt=message.body,
             message_history=history,
         )
 
-        new = result.new_messages()
-        message.set_messages(new)
-
-        await self.whats.reply(data.from_, data.id, str(result.data))
+        message.model_messages = result.new_messages()
+        await self.whats.reply(data.from_, data.id, result.data)
         message.save()
         return message
 

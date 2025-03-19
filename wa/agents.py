@@ -1,35 +1,37 @@
+import logging
 from typing import Annotated
 
 from fastapi import Depends
-from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelRetry
 from pydantic_ai.models.openai import OpenAIModel
 
 from wa.config import DepConfig
 
-
-class CalculationResult(BaseModel):
-    result: float = Field(description="The result of the calculation")
+logger = logging.getLogger(__name__)
 
 
 def add(a: float, b: float) -> float:
     """Adds two numbers together."""
+    logger.debug(f"Adding {a} and {b}")
     return a + b
 
 
 def subtract(a: float, b: float) -> float:
     """Subtracts the second number from the first."""
+    logger.debug(f"Subtracting {b} from {a}")
     return a - b
 
 
 def multiply(a: float, b: float) -> float:
     """Multiplies two numbers together."""
+    logger.debug(f"Multiplying {a} and {b}")
     return a * b
 
 
 def divide(a: float, b: float) -> float:
     """Divides the first number by the second."""
+    logger.debug(f"Dividing {a} by {b}")
     if b == 0:
         raise ModelRetry("Cannot divide by zero")
     return a / b
@@ -60,4 +62,4 @@ def dep_agent(model: DepModel):
     return agent
 
 
-DepAgent = Annotated[Agent[None, CalculationResult], Depends(dep_agent)]
+DepAgent = Annotated[Agent[None, str], Depends(dep_agent)]

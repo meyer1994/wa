@@ -1,82 +1,48 @@
 import datetime as dt
 import itertools
-import uuid
 from typing import Any
 
 from pydantic import TypeAdapter
 from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse
 from pynamodb import attributes as attr
-from pynamodb.models import Model
+from pynamodb.models import MetaProtocol, Model
 
 import wa.models as models
+from wa.config import Config
+
+
+def _now() -> dt.datetime:
+    """Utility function to get the current UTC time."""
+    return dt.datetime.now(dt.UTC)
 
 
 class WhatsAppItem(Model):
-    class Meta:
-        table_name = "whatsapp-events"
-        host = "http://localhost:8001"
+    class Meta(MetaProtocol):
+        pass
 
-    id = attr.UnicodeAttribute(
-        hash_key=True,
-        default=lambda: "whatsapp:%s" % uuid.uuid4(),
-    )
-
-    timestamp = attr.UTCDateTimeAttribute(
-        range_key=True,
-        default=lambda: dt.datetime.now(dt.UTC),
-    )
-
-    data = attr.MapAttribute[str, Any]()
-
+    id = attr.UnicodeAttribute(hash_key=True, default="whatsapp:item")
+    key = attr.UnicodeAttribute(range_key=True)
+    timestamp = attr.UTCDateTimeAttribute(default=_now)
+    data = attr.MapAttribute[str, Any](default=dict)
     type = attr.DiscriminatorAttribute()
 
 
-class WhatsAppMessage(WhatsAppItem, discriminator="MESSAGE"):
-    id = attr.UnicodeAttribute(
-        hash_key=True,
-        default=lambda: "whatsapp:message:%s" % uuid.uuid4(),
-    )
+class WhatsAppMessage(WhatsAppItem, discriminator="whatsapp:item:message"):
+    id = attr.UnicodeAttribute(hash_key=True, default="whatsapp:item:message")
 
     @staticmethod
-    def from_model(model: models.MessageObject) -> "WhatsAppMessage":
-        return WhatsAppMessage(
-            id=f"whatsapp:message:{model.id}",
-            timestamp=model.timestamp,
-            data=model.model_dump(mode="json"),
-        )
-
-    def as_model(self) -> models.MessageObject:
-        return models.MessageObjectAdapter.validate_python(
-            {
-                "id": f"whatsapp:message:{self.id}",
-                "timestamp": self.timestamp,
-                **self.data,
-            }
-        )
+    def from_model(m: models.MessageObject) -> "WhatsAppMessage":
+        data = m.model_dump(mode="json")
+        return WhatsAppMessage(key=m.id, timestamp=m.timestamp, data=data)
 
 
-class WhatsAppStatus(WhatsAppItem, discriminator="STATUS"):
-    id = attr.UnicodeAttribute(
-        hash_key=True,
-        default=lambda: "whatsapp:status:%s" % uuid.uuid4(),
-    )
+class WhatsAppStatus(WhatsAppItem, discriminator="whatsapp:item:status"):
+    id = attr.UnicodeAttribute(hash_key=True, default="whatsapp:item:status")
 
     @staticmethod
     def from_model(model: models.StatusObject) -> "WhatsAppStatus":
-        return WhatsAppStatus(
-            id=f"whatsapp:status:{model.id}",
-            timestamp=model.timestamp,
-            data=model.model_dump(mode="json"),
-        )
-
-    def as_model(self) -> models.StatusObject:
-        return models.StatusObject.model_validate(
-            {
-                "id": f"whatsapp:status:{self.id}",
-                "timestamp": self.timestamp,
-                **self.data,
-            }
-        )
+        data = model.model_dump(mode="json")
+        return WhatsAppStatus(key=model.id, timestamp=model.timestamp, data=data)
 
 
 ModelRequestAdapter = TypeAdapter(ModelRequest)
@@ -84,19 +50,29 @@ ModelResponseAdapter = TypeAdapter(ModelResponse)
 
 
 class Message(Model):
-    class Meta:
-        table_name = "messages"
-        host = "http://localhost:8001"
+    class Meta(MetaProtocol):
+        pass
 
     from_ = attr.UnicodeAttribute(hash_key=True)
-    timestamp = attr.UTCDateTimeAttribute(range_key=True)
-    data = attr.MapAttribute[str, Any]()
-
-    agent = attr.ListAttribute[dict[str, Any]](default=list)
-
+    timestamp = attr.UTCDateTimeAttribute(range_key=True, default=_now)
+    data = attr.MapAttribute[str, Any](default=dict)
+    agent = attr.MapAttribute[str, Any](default=dict)
     type = attr.DiscriminatorAttribute()
 
-    def set_messages(self, data: list[ModelMessage]):
+    @property
+    def model_messages(self) -> list[ModelMessage]:
+        messages: list[ModelMessage] = []
+        for i in self.agent["messages"]:
+            if i["kind"] == "response":
+                messages.append(ModelResponseAdapter.validate_python(i))
+            elif i["kind"] == "request":
+                messages.append(ModelRequestAdapter.validate_python(i))
+            else:
+                raise ValueError(f"Unknown message kind: {i['kind']}")
+        return messages
+
+    @model_messages.setter
+    def model_messages(self, data: list[ModelMessage]):
         messages: list[dict[str, Any]] = []
         for i in data:
             if i.kind == "response":
@@ -105,24 +81,17 @@ class Message(Model):
             elif i.kind == "request":
                 msg = ModelRequestAdapter.dump_python(i, mode="json")
                 messages.append(msg)
-        self.agent = messages
+            else:
+                raise ValueError(f"Unknown message kind: {i.kind}")
+        self.agent["messages"] = messages
 
-
-class MessageText(Message, discriminator="TEXT"):
-    def latest_messages(self, limit: int = 10) -> list[ModelMessage]:
+    def latest(self, limit: int = 10) -> list[ModelMessage]:
         query = self.query(hash_key=self.from_, limit=limit, scan_index_forward=False)
-        messages = itertools.chain.from_iterable(i.get_messages() for i in query)
+        messages = itertools.chain.from_iterable(i.model_messages for i in query)
         return list(messages)
 
-    def get_messages(self) -> list[ModelMessage]:
-        messages: list[ModelMessage] = []
-        for i in self.agent:
-            if i["kind"] == "response":
-                messages.append(ModelResponseAdapter.validate_python(i))
-            elif i["kind"] == "request":
-                messages.append(ModelRequestAdapter.validate_python(i))
-        return messages
 
+class MessageText(Message, discriminator="wa:message:text"):
     @property
     def body(self) -> str:
         data = self.data.as_dict()
@@ -132,9 +101,14 @@ class MessageText(Message, discriminator="TEXT"):
     def from_model(model: models.MessageObject) -> "MessageText":
         if model.type != "text":
             raise ValueError("Message type is not text")
+        data = model.model_dump(mode="json")
+        return MessageText(from_=model.from_, timestamp=model.timestamp, data=data)
 
-        return MessageText(
-            from_=model.from_,
-            timestamp=model.timestamp,
-            data=model.model_dump(mode="json"),
-        )
+
+def init(cfg: Config):
+    Message.Meta.table_name = cfg.DYNAMO_DB_TABLE_MESSAGES
+    WhatsAppItem.Meta.table_name = cfg.DYNAMO_DB_TABLE_EVENTS
+
+    if cfg.DYNAMO_DB_HOST:
+        Message.Meta.host = cfg.DYNAMO_DB_HOST
+        WhatsAppItem.Meta.host = cfg.DYNAMO_DB_HOST
