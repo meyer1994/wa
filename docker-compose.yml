@@ -6,4 +6,4 @@ services:
       - 8001:8000
     environment:
       DYNAMODB_TABLE: wa-table
-
+  
