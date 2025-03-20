@@ -79,15 +79,12 @@ class WhatsApp:
         return response.json()
 
     async def reply(self, to: str, id: str, message: str):
-        if len(to) == OLD_NUM_LENGTH:
-            to = to[:4] + "9" + to[4:]
-
         response = await self.client.post(
             url=self._url("messages"),
             json={
                 "messaging_product": "whatsapp",
                 "recipient_type": "individual",
-                "to": to,
+                "to": self._num(to),
                 "context": {"message_id": id},
                 "type": "text",
                 "text": {"preview_url": False, "body": message},
@@ -106,9 +103,9 @@ class WhatsApp:
 
     async def media(self, from_: str, id: str):
         raise NotImplementedError
-        url = self._url(id)
-        response = await self.client.get(url)
-        logger.debug("%s", response)
-        logger.debug("%s", response.headers)
-        logger.debug("%s", response.json())
-        return response.json()
+        # url = self._url(id)
+        # response = await self.client.get(url)
+        # logger.debug("%s", response)
+        # logger.debug("%s", response.headers)
+        # logger.debug("%s", response.json())
+        # return response.json()
