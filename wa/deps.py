@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import pydantic_ai
@@ -7,6 +8,8 @@ from fastapi import Depends
 
 from wa.config import Config
 from wa.whatsapp import WhatsApp
+
+logger = logging.getLogger(__name__)
 
 
 def dep_config() -> Config:

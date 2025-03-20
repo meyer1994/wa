@@ -75,9 +75,14 @@ class WhatsAppStack(Stack):
             rest_api_name=f"{id}-api",
             handler=lambda_function,
             proxy=True,
+            # deploy
+            deploy=True,
+            retain_deployments=True,
+            # debug
+            profiling=True,
+            # logs
             cloud_watch_role=True,
             cloud_watch_role_removal_policy=RemovalPolicy.DESTROY,
-            deploy=True,
         )
 
         api.apply_removal_policy(RemovalPolicy.DESTROY)

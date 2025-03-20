@@ -1,22 +1,23 @@
 import contextlib
 import logging
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
-import wa.config
 import wa.dynamo
 import wa.logs
 import wa.models
 import wa.whatsapp
+from wa.config import Config
 
 logger = logging.getLogger(__name__)
 
 
 @contextlib.asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting server...")
 
-    cfg = wa.config.Config()  # type: ignore
+    cfg = Config()  # type: ignore
     wa.logs.init()
     wa.dynamo.init(cfg)
 

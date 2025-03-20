@@ -3,6 +3,9 @@ import logging.config
 
 import uvicorn.logging
 
+logger = logging.getLogger(__name__)
+
+
 CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,

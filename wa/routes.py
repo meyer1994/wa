@@ -73,7 +73,7 @@ class Handler:
         return message
 
     async def on_image(self, data: models.ImageMessage):
-        logger.info("on_image(%s): %s", data.id, data.caption)
+        logger.info("on_image(%s): %s", data.id, data.image.sha256)
         logger.debug("%s", data.model_dump_json(indent=2))
 
 
@@ -94,9 +94,9 @@ _PostContext = Annotated[PostContext, Depends()]
 
 
 @router.post("/")
-async def receive(ctx: _PostContext):
+async def receive(ctx: _PostContext) -> dict[str, bool]:
     for entry in ctx.data.entry:
-        logger.debug("receive(%s)", entry.id)
+        logger.info("receive(%s)", entry.id)
         logger.debug("%s", entry.model_dump_json(indent=2))
 
     async with asyncio.TaskGroup() as tg:

@@ -2,11 +2,10 @@ import contextlib
 import logging
 import secrets
 from dataclasses import dataclass, field
+from typing import Never
 
 import httpx
 from httpx import AsyncClient
-
-import wa.config
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +23,9 @@ class WhatsApp:
 
     client: AsyncClient = field(init=False, repr=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         self.client = AsyncClient(base_url=self.base_url, headers=headers)
-
-    @staticmethod
-    def as_dep(cfg: wa.config.DepConfig) -> "WhatsApp":
-        return WhatsApp(
-            access_token=cfg.WHATSAPP_ACCESS_TOKEN,
-            sender_id=cfg.WHATSAPP_SENDER_ID,
-            verify_token=cfg.WHATSAPP_VERIFY_TOKEN,
-        )
 
     def _url(self, *args: str) -> str:
         return "/".join([self.base_url, self.sender_id, *args])
@@ -101,7 +92,7 @@ class WhatsApp:
 
         return response.json()
 
-    async def media(self, from_: str, id: str):
+    async def media(self, from_: str, id: str) -> Never:
         raise NotImplementedError
         # url = self._url(id)
         # response = await self.client.get(url)
