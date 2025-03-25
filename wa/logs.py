@@ -51,10 +51,10 @@ CONFIG = {
             "level": logging.INFO,
             "handlers": ["access"],
         },
-        "pynamodb": {
-            "level": logging.INFO,
-            "handlers": ["default"],
-        },
+        # "openai": {
+        #     "level": logging.DEBUG,
+        #     "handlers": ["default"],
+        # },
     },
 }
 

@@ -19,6 +19,9 @@ class Config(BaseSettings):
     WHATSAPP_SENDER_NUMBER: str
     """The sender phone number used to send messages"""
 
+    WHATSAPP_APP_SECRET: str
+    """The app secret used to verify webhooks"""
+
     OPENAI_API_KEY: str
     """OpenAI API key"""
 

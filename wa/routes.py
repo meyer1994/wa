@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import pydantic_ai
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 import wa.dynamo as db
 import wa.models as models
@@ -87,7 +87,7 @@ DepHandler = Annotated[Handler, Depends(dep_handler)]
 @dataclass
 class PostContext:
     handler: DepHandler
-    data: Annotated[models.Webhook, Body()]
+    data: deps.DepWebhook
 
 
 _PostContext = Annotated[PostContext, Depends()]

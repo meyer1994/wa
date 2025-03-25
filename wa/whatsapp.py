@@ -1,4 +1,6 @@
 import contextlib
+import hashlib
+import hmac
 import logging
 import secrets
 from dataclasses import dataclass, field
@@ -100,3 +102,10 @@ class WhatsApp:
         # logger.debug("%s", response.headers)
         # logger.debug("%s", response.json())
         # return response.json()
+
+    @staticmethod
+    def verify(secret: str, sig: str, data: bytes) -> bool:
+        secret = secret.encode("utf-8")
+        signature = hmac.new(secret, data, hashlib.sha256)
+        signature = signature.hexdigest()
+        return secrets.compare_digest(signature, sig)
