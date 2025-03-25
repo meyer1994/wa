@@ -1,4 +1,4 @@
-.PHONY: build clean deploy destroy
+.PHONY: build clean deploy destroy reset
 
 clean:
 	rm -rf dist
@@ -18,8 +18,8 @@ build:
 		--target 'dist' \
 		-r 'dist/requirements.txt'
 	cp -rfv wa dist/
-	cp -v handler.py dist/
-	cd dist && zip -r lambda.zip .
+	cp -fv handler.py dist/
+	cd dist && zip -rv lambda.zip .
 
 
 deploy:
@@ -29,3 +29,5 @@ deploy:
 destroy:
 	npx aws-cdk destroy --app 'uv run infra.py' --verbose
 
+
+reset: clean destroy build deploy

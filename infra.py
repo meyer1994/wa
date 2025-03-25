@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from aws_cdk import App, Duration, RemovalPolicy, Stack
 from aws_cdk import aws_apigateway as apigw
+from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
@@ -96,10 +97,40 @@ class WhatsAppStack(Stack):
             proxy=True,
             # deploy
             deploy=True,
-            retain_deployments=True,
+            retain_deployments=False,
             # logs
             cloud_watch_role=True,
             cloud_watch_role_removal_policy=RemovalPolicy.DESTROY,
+            # deploy
+            deploy_options=apigw.StageOptions(
+                throttling_rate_limit=100,
+                throttling_burst_limit=200,
+                # debugging
+                metrics_enabled=True,
+                data_trace_enabled=True,
+                # logs
+                logging_level=apigw.MethodLoggingLevel.INFO,
+                access_log_destination=apigw.LogGroupLogDestination(
+                    log_group=logs.LogGroup(
+                        self,
+                        f"{id}-api-logs",
+                        log_group_name=f"{id}-api-logs",
+                        retention=logs.RetentionDays.THREE_DAYS,
+                        removal_policy=RemovalPolicy.DESTROY,
+                    ),
+                ),
+                access_log_format=apigw.AccessLogFormat.json_with_standard_fields(
+                    caller=True,
+                    http_method=True,
+                    ip=True,
+                    protocol=True,
+                    request_time=True,
+                    resource_path=True,
+                    response_length=True,
+                    status=True,
+                    user=True,
+                ),
+            ),
         )
 
         api.apply_removal_policy(RemovalPolicy.DESTROY)
@@ -112,15 +143,59 @@ class WhatsAppStack(Stack):
         )
 
         # undocument hack to be able to delete the log group. api gateway only
-        # creates the log group on the first request. if the log group is already
-        # created, it just uses it. this is the only way to assign a retention policy
-        # to the execution logs of the api gateway
+        # creates the log group on the first request. if the log group is
+        # already created, it just uses it. this is the only way to assign a
+        # retention policy to the execution logs of the api gateway
         log = logs.LogGroup(
             self,
-            f"{id}-api-logs",
+            f"{id}-api-execution-logs",
             log_group_name=f"API-Gateway-Execution-Logs_{api.rest_api_id}/{stage.stage_name}",
             retention=logs.RetentionDays.THREE_DAYS,
             removal_policy=RemovalPolicy.DESTROY,
+        )
+
+        # Create CloudWatch Dashboard
+        dashboard = cloudwatch.Dashboard(
+            self,
+            f"{id}-dashboard",
+            dashboard_name=f"{id}-dashboard",
+        )
+
+        # Row 1 - Each call to `add_widgets` adds a new row to the dashboard
+        dashboard.add_widgets(
+            # Total Requests
+            cloudwatch.GraphWidget(
+                title="Requests",
+                left=[api.metric_count()],
+                width=8,
+            ),
+            # Total Errors
+            cloudwatch.GraphWidget(
+                title="Errors",
+                left=[api.metric_client_error(), api.metric_server_error()],
+                width=8,
+            ),
+            # Latency
+            cloudwatch.GraphWidget(
+                title="Latency",
+                left=[api.metric_latency(), api.metric_integration_latency()],
+                width=8,
+            ),
+        )
+
+        # Row 2
+        dashboard.add_widgets(
+            # Logs
+            cloudwatch.LogQueryWidget(
+                title="Logs",
+                log_group_names=[log.log_group_name],
+                query_lines=[
+                    "fields @timestamp, @message, @logStream, @log",
+                    "sort @timestamp desc",
+                    "limit 100",
+                ],
+                width=24,
+            )
         )
 
 
