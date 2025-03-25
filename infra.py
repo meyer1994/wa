@@ -44,11 +44,19 @@ class WhatsAppStack(Stack):
         )
 
         # Create Lambda function for FastAPI with Mangum adapter
-        lambda_function = lambda_.DockerImageFunction(
+        lambda_function = lambda_.Function(
             self,
+            # meta
             f"{id}-function",
             function_name=f"{id}-function",
-            code=lambda_.DockerImageCode.from_image_asset(directory="."),
+            # code
+            handler="handler.handler",
+            code=lambda_.Code.from_custom_command(
+                output="dist/lambda.zip",
+                command=["make", "clean", "build"],
+            ),
+            # runtine
+            runtime=lambda_.Runtime.PYTHON_3_13,
             timeout=Duration.seconds(10),
             memory_size=1024,
             environment={
@@ -59,10 +67,21 @@ class WhatsAppStack(Stack):
                 "WHATSAPP_SENDER_NUMBER": cfg.WHATSAPP_SENDER_NUMBER,
                 "WHATSAPP_ACCESS_TOKEN": cfg.WHATSAPP_ACCESS_TOKEN,
                 "WHATSAPP_VERIFY_TOKEN": cfg.WHATSAPP_VERIFY_TOKEN,
+                "WHATSAPP_APP_SECRET": cfg.WHATSAPP_APP_SECRET,
                 # openai
                 "OPENAI_API_KEY": cfg.OPENAI_API_KEY,
             },
-            log_retention=logs.RetentionDays.THREE_DAYS,
+            # debugging
+            profiling=True,  # not supported in docker image function
+            tracing=lambda_.Tracing.ACTIVE,
+            # logs
+            log_group=logs.LogGroup(
+                self,
+                f"{id}-function-logs",
+                log_group_name=f"{id}-function",
+                retention=logs.RetentionDays.THREE_DAYS,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
         )
 
         t_messages.grant_read_write_data(lambda_function)
@@ -78,8 +97,6 @@ class WhatsAppStack(Stack):
             # deploy
             deploy=True,
             retain_deployments=True,
-            # debug
-            profiling=True,
             # logs
             cloud_watch_role=True,
             cloud_watch_role_removal_policy=RemovalPolicy.DESTROY,
@@ -89,7 +106,7 @@ class WhatsAppStack(Stack):
 
         stage = apigw.Stage.from_stage_attributes(
             self,
-            f"{id}-stage",
+            f"{id}-api-stage",
             rest_api=api,
             stage_name="prod",
         )
@@ -100,7 +117,7 @@ class WhatsAppStack(Stack):
         # to the execution logs of the api gateway
         log = logs.LogGroup(
             self,
-            f"{id}-logs",
+            f"{id}-api-logs",
             log_group_name=f"API-Gateway-Execution-Logs_{api.rest_api_id}/{stage.stage_name}",
             retention=logs.RetentionDays.THREE_DAYS,
             removal_policy=RemovalPolicy.DESTROY,

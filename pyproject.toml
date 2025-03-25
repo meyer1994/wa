@@ -28,4 +28,3 @@ allow_redefinition = true
 
 [tool.ruff]
 target-version = "py313"
-
