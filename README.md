@@ -5,8 +5,6 @@ Simple WhatsApp bot infrastructure on AWS Lambda using CDK.
 ## Setup
 
 ```bash
-uv venv
-source .venv/bin/activate
 uv sync
 ```
 
@@ -16,9 +14,13 @@ To start developing locally:
 docker compose up
 ```
 
-Create the events table:
+Create the tables:
+
+- `EVENTS_TABLE`
+- `MESSAGES_TABLE`
 
 ```bash
+# events table
 aws dynamodb create-table \
     --table-name 'EVENTS_TABLE' \
     --attribute-definitions \
@@ -30,11 +32,8 @@ aws dynamodb create-table \
     --provisioned-throughput \
         ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --endpoint-url 'http://localhost:8001'
-```
 
-Create the messages table:
-
-```bash
+# messages table
 aws dynamodb create-table \
     --table-name 'MESSAGES_TABLE' \
     --attribute-definitions \
@@ -51,10 +50,13 @@ aws dynamodb create-table \
 Run the app:
 
 ```bash
-uv run run.py
+uv run uvicorn handler:app --reload
 ```
 
 ### Docker
+
+
+If you don't want to read:
 
 ```bash
 docker compose up --build
@@ -66,12 +68,24 @@ Deploy:
 
 ```bash
 npx aws-cdk deploy --app 'uv run infra.py' --verbose
+# or
+make deploy
 ```
 
 Destroy:
 
 ```bash
 npx aws-cdk destroy --app 'uv run infra.py' --verbose
+# or
+make destroy
+```
+
+Redeploy:
+
+```bash
+npx aws-cdk destroy --app 'uv run infra.py' --verbose
+# or
+make reset
 ```
 
 ## Infrastructure
