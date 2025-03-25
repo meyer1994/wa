@@ -2,6 +2,7 @@ import logging
 import logging.config
 
 import uvicorn.logging
+from asgi_correlation_id import CorrelationIdFilter
 
 logger = logging.getLogger(__name__)
 
@@ -9,27 +10,35 @@ logger = logging.getLogger(__name__)
 CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "correlation_id": {
+            "()": CorrelationIdFilter,
+            "uuid_length": 8,
+        },
+    },
     "formatters": {
         "access": {
-            "()": uvicorn.logging.AccessFormatter,
-            "fmt": "%(levelprefix)s [%(asctime)s]  - %(request_line)s %(status_code)s",
-            "datefmt": r"%Y-%m-%d %H:%M:%S",
             "use_colors": True,
+            "datefmt": r"%Y-%m-%d %H:%M:%S",
+            "()": uvicorn.logging.AccessFormatter,
+            "fmt": "%(levelprefix)s [%(asctime)s] [%(correlation_id)s] - %(request_line)s %(status_code)s",
         },
         "default": {
-            "()": uvicorn.logging.DefaultFormatter,
-            "fmt": "%(levelprefix)s [%(asctime)s] [%(module)s:%(lineno)s] - %(message)s",
-            "datefmt": r"%Y-%m-%d %H:%M:%S",
             "use_colors": True,
+            "datefmt": r"%Y-%m-%d %H:%M:%S",
+            "()": uvicorn.logging.DefaultFormatter,
+            "fmt": "%(levelprefix)s [%(asctime)s] [%(correlation_id)s] [%(module)s:%(lineno)s] - %(message)s",
         },
     },
     "handlers": {
         "default": {
             "formatter": "default",
+            "filters": ["correlation_id"],
             "class": logging.StreamHandler,
         },
         "access": {
             "formatter": "access",
+            "filters": ["correlation_id"],
             "class": logging.StreamHandler,
         },
     },
