@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 import wa.dynamo as db
 import wa.whats.models as models
 from wa import deps
+from wa.store import Store
 from wa.whats.client import WhatsApp
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ async def subscribe(ctx: _GetContext) -> int:
 class Handler:
     agent: pydantic_ai.Agent[None, str]
     whats: WhatsApp
+    store: Store
 
     async def on_message(self, data: models.MessageObject) -> db.WhatsAppMessage:
         logger.info("on_message(%s): %s", data.id, data.type)
@@ -75,10 +77,22 @@ class Handler:
     async def on_image(self, data: models.ImageMessage):
         logger.info("on_image(%s): %s", data.id, data.image.sha256)
         logger.debug("%s", data.model_dump_json(indent=2))
+        media = await self.whats.media(data.image.id)
+        key = "/".join(["whatsapp", "user", data.from_, "media", data.image.id])
+        await self.store.save(key, media)
+        return key
 
 
-def dep_handler(agent: deps.DepAgent, whats: deps.DepWhatsApp) -> Handler:
-    return Handler(agent=agent, whats=whats)
+def dep_handler(
+    agent: deps.DepAgent,
+    whats: deps.DepWhatsApp,
+    store: deps.DepStore,
+) -> Handler:
+    return Handler(
+        agent=agent,
+        whats=whats,
+        store=store,
+    )
 
 
 DepHandler = Annotated[Handler, Depends(dep_handler)]
@@ -88,6 +102,7 @@ DepHandler = Annotated[Handler, Depends(dep_handler)]
 class PostContext:
     handler: DepHandler
     data: deps.DepWebhook
+    config: deps.DepConfig
 
 
 _PostContext = Annotated[PostContext, Depends()]

@@ -44,7 +44,7 @@ CONFIG = {
     },
     "loggers": {
         "wa": {
-            "level": logging.INFO,
+            "level": logging.DEBUG,
             "handlers": ["default"],
         },
         "uvicorn.access": {

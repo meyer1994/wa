@@ -105,10 +105,24 @@ class MessageText(Message, discriminator="wa:message:text"):
         return MessageText(from_=model.from_, timestamp=model.timestamp, data=data)
 
 
+class MessageImage(Message, discriminator="wa:message:image"):
+    @property
+    def image(self) -> models.ImageObject:
+        data = self.data.as_dict()
+        return models.ImageObject.model_validate(data)
+
+    @staticmethod
+    def from_model(model: models.MessageObject) -> "MessageImage":
+        if model.type != "image":
+            raise ValueError("Message type is not image")
+        data = model.model_dump(mode="json")
+        return MessageImage(from_=model.from_, timestamp=model.timestamp, data=data)
+
+
 def init(cfg: Config):
     Message.Meta.table_name = cfg.DYNAMO_DB_TABLE_MESSAGES
     WhatsAppItem.Meta.table_name = cfg.DYNAMO_DB_TABLE_EVENTS
 
-    if cfg.DYNAMO_DB_HOST:
-        Message.Meta.host = cfg.DYNAMO_DB_HOST
-        WhatsAppItem.Meta.host = cfg.DYNAMO_DB_HOST
+    if cfg.AWS_ENDPOINT_URL:
+        Message.Meta.host = cfg.AWS_ENDPOINT_URL
+        WhatsAppItem.Meta.host = cfg.AWS_ENDPOINT_URL

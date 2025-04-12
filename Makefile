@@ -34,7 +34,7 @@ reset: clean destroy build deploy
 
 
 tables:
-	aws dynamodb create-table \
+	awslocal dynamodb create-table \
 		--table-name 'EVENTS_TABLE' \
 		--attribute-definitions \
 			AttributeName=id,AttributeType=S \
@@ -43,9 +43,9 @@ tables:
 			AttributeName=id,KeyType=HASH \
 			AttributeName=key,KeyType=RANGE \
 		--provisioned-throughput \
-			ReadCapacityUnits=1,WriteCapacityUnits=1 \
-		--endpoint-url 'http://localhost:8001'
-	aws dynamodb create-table \
+			ReadCapacityUnits=1,WriteCapacityUnits=1 
+	| tee
+	awslocal dynamodb create-table \
 		--table-name 'MESSAGES_TABLE' \
 		--attribute-definitions \
 			AttributeName=from_,AttributeType=S \
@@ -55,4 +55,8 @@ tables:
 			AttributeName=timestamp,KeyType=RANGE \
 		--provisioned-throughput \
 			ReadCapacityUnits=1,WriteCapacityUnits=1 \
-		--endpoint-url 'http://localhost:8001'
+	| tee
+
+
+bucket:
+	awslocal s3 mb s3://rag-bucket | tee

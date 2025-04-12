@@ -20,31 +20,13 @@ Create the tables:
 - `MESSAGES_TABLE`
 
 ```bash
-# events table
-aws dynamodb create-table \
-    --table-name 'EVENTS_TABLE' \
-    --attribute-definitions \
-        AttributeName=id,AttributeType=S \
-        AttributeName=key,AttributeType=S \
-    --key-schema \
-        AttributeName=id,KeyType=HASH \
-        AttributeName=key,KeyType=RANGE \
-    --provisioned-throughput \
-        ReadCapacityUnits=1,WriteCapacityUnits=1 \
-    --endpoint-url 'http://localhost:8001'
+make tables
+```
 
-# messages table
-aws dynamodb create-table \
-    --table-name 'MESSAGES_TABLE' \
-    --attribute-definitions \
-        AttributeName=from_,AttributeType=S \
-        AttributeName=timestamp,AttributeType=S \
-    --key-schema \
-        AttributeName=from_,KeyType=HASH \
-        AttributeName=timestamp,KeyType=RANGE \
-    --provisioned-throughput \
-        ReadCapacityUnits=1,WriteCapacityUnits=1 \
-    --endpoint-url 'http://localhost:8001'
+Create the RAG bucket:
+
+```bash
+make bucket
 ```
 
 Run the app:

@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "anyio>=4.9.0",
     "asgi-correlation-id>=4.3.4",
     "fastapi>=0.115.11",
     "httpx>=0.28.1",
@@ -12,6 +13,7 @@ dependencies = [
     "pydantic>=2.10.6",
     "pydantic-ai>=0.0.40",
     "pydantic-settings>=2.8.1",
+    "types-boto3[s3]>=1.37.33",
     "pynamodb>=6.0.2",
 ]
 
@@ -22,6 +24,9 @@ dev = [
     "ruff>=0.11.0",
     "uvicorn>=0.34.0",
     "cdklabs-generative-ai-cdk-constructs>=0.1.299",
+    "pyright>=1.1.399",
+    "pylance>=0.25.2",
+    "awscli-local>=0.22.0",
 ]
 
 [tool.mypy]

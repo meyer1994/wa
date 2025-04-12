@@ -7,6 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Config(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    DEBUG: bool = False
+    """Enable debug mode. Sends errors back to the sender"""
+
     WHATSAPP_VERIFY_TOKEN: str
     """The token used to verify/subscribe to the webhook"""
 
@@ -33,6 +36,12 @@ class Config(BaseSettings):
 
     DYNAMO_DB_HOST: str | None = None
     """DynamoDB host. Used for local development"""
+
+    AWS_S3_BUCKET_RAG: str
+    """S3 bucket name for RAG"""
+
+    AWS_ENDPOINT_URL: str | None = None
+    """AWS endpoint URL. Used for local development"""
 
 
 DepConfig = Annotated[Config, Depends(lambda: Config())]

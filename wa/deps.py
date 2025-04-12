@@ -2,12 +2,14 @@ import logging
 from dataclasses import dataclass
 from typing import Annotated
 
-import pydantic_ai
-import pydantic_ai.models
-import pydantic_ai.models.openai
+import boto3
 from fastapi import Body, Depends, Header, HTTPException, Request
+from pydantic_ai import Agent
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from wa.config import Config
+from wa.store import Store
 from wa.whats.client import WhatsApp
 from wa.whats.models import Webhook
 
@@ -21,11 +23,11 @@ def dep_config() -> Config:
 DepConfig = Annotated[Config, Depends(dep_config)]
 
 
-def dep_agent(cfg: DepConfig) -> pydantic_ai.Agent[None, str]:
-    return pydantic_ai.Agent(
-        model=pydantic_ai.models.openai.OpenAIModel(
-            model_name="gpt-4o-mini",
-            api_key=cfg.OPENAI_API_KEY,
+def dep_agent(cfg: DepConfig) -> Agent[None, str]:
+    return Agent(
+        model=OpenAIModel(
+            "gpt-4o-mini",
+            provider=OpenAIProvider(api_key=cfg.OPENAI_API_KEY),
         ),
     )
 
@@ -39,7 +41,7 @@ def dep_whatsapp(cfg: DepConfig) -> WhatsApp:
 
 
 DepWhatsApp = Annotated[WhatsApp, Depends(dep_whatsapp)]
-DepAgent = Annotated[pydantic_ai.Agent[None, str], Depends(dep_agent)]
+DepAgent = Annotated[Agent[None, str], Depends(dep_agent)]
 
 
 @dataclass
@@ -71,3 +73,12 @@ async def dep_webhook(ctx: _WebhookContext) -> Webhook:
 
 
 DepWebhook = Annotated[Webhook, Depends(dep_webhook)]
+
+
+def dep_store(cfg: DepConfig) -> Store:
+    s3 = boto3.resource("s3", endpoint_url=cfg.AWS_ENDPOINT_URL)
+    bucket = s3.Bucket(cfg.AWS_S3_BUCKET_RAG)
+    return Store(bucket=bucket)
+
+
+DepStore = Annotated[Store, Depends(dep_store)]

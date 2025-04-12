@@ -46,6 +46,15 @@ class WhatsAppStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
+        b_rag = s3.Bucket(
+            self,
+            f"{id}-rag-bucket",
+            bucket_name=f"{id}-rag-bucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            versioned=False,
+        )
+
         # Create Lambda function for FastAPI with Mangum adapter
         lambda_function = lambda_.Function(
             self,
@@ -63,8 +72,13 @@ class WhatsAppStack(Stack):
             timeout=Duration.seconds(10),
             memory_size=1024,
             environment={
+                # debug
+                "DEBUG": "true",
+                # dynamo
                 "DYNAMO_DB_TABLE_EVENTS": t_events.table_name,
                 "DYNAMO_DB_TABLE_MESSAGES": t_messages.table_name,
+                # s3
+                "AWS_S3_BUCKET_RAG": b_rag.bucket_name,
                 # whatsapp
                 "WHATSAPP_SENDER_ID": cfg.WHATSAPP_SENDER_ID,
                 "WHATSAPP_SENDER_NUMBER": cfg.WHATSAPP_SENDER_NUMBER,
@@ -89,15 +103,7 @@ class WhatsAppStack(Stack):
 
         t_messages.grant_read_write_data(lambda_function)
         t_events.grant_read_write_data(lambda_function)
-
-        rag_bucket = s3.Bucket(
-            self,
-            f"{id}-rag-bucket",
-            bucket_name=f"{id}-rag-bucket",
-            removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True,
-            versioned=False,
-        )
+        b_rag.grant_read_write(lambda_function)
 
         bedrock_knowledge_base = bedrock.VectorKnowledgeBase(
             self,
@@ -114,7 +120,7 @@ class WhatsAppStack(Stack):
         s3_data_source = bedrock.S3DataSource(
             self,
             f"{id}-s3-data-source",
-            bucket=rag_bucket,
+            bucket=b_rag,
             knowledge_base=bedrock_knowledge_base,
             data_deletion_policy=bedrock.DataDeletionPolicy.DELETE,
         )

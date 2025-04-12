@@ -4,7 +4,8 @@ import hmac
 import logging
 import secrets
 from dataclasses import dataclass, field
-from typing import Never
+from tempfile import SpooledTemporaryFile
+from typing import IO, Final
 
 import httpx
 from httpx import AsyncClient
@@ -20,7 +21,7 @@ OLD_NUM_LENGTH = 12
 class WhatsApp:
     access_token: str
     sender_id: str
-    base_url: str = "https://graph.facebook.com/v22.0"
+    base_url: Final = "https://graph.facebook.com/v22.0"
     verify_token: str | None = None
 
     client: AsyncClient = field(init=False, repr=False)
@@ -94,14 +95,35 @@ class WhatsApp:
 
         return response.json()
 
-    async def media(self, from_: str, id: str) -> Never:
-        raise NotImplementedError
-        # url = self._url(id)
-        # response = await self.client.get(url)
-        # logger.debug("%s", response)
-        # logger.debug("%s", response.headers)
-        # logger.debug("%s", response.json())
-        # return response.json()
+    async def media(self, id: str) -> IO[bytes]:
+        url = "/".join([self.base_url, id])
+
+        try:
+            response = await self.client.get(url)
+            logger.debug(f"{response=}")
+            response.raise_for_status()
+        except httpx.HTTPStatusError:
+            logger.error("%s", response.json())
+            raise
+
+        body = response.json()
+        url = body["url"]
+        logger.debug(f"{url=}")
+
+        try:
+            response = await self.client.get(url)
+            logger.debug(f"{response=}")
+            response.raise_for_status()
+        except httpx.HTTPStatusError:
+            logger.error("%s", response.json())
+            raise
+
+        file = SpooledTemporaryFile()
+        async for chunk in response.aiter_bytes():
+            file.write(chunk)
+        file.seek(0)
+
+        return file
 
     @staticmethod
     def verify(secret: str, sig: str, data: bytes) -> bool:
