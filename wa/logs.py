@@ -56,7 +56,7 @@ CONFIG = {
             "handlers": ["default"],
         },
         "httpx": {
-            "level": logging.INFO,
+            "level": logging.WARNING,
             "handlers": ["default"],
         },
         "pynamodb": {

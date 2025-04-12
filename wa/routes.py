@@ -6,10 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic_ai.messages import DocumentUrl, ImageUrl, UserContent
 
+import wa.agents as agents
 import wa.dynamo as db
 import wa.whats.models as models
 from wa import deps
-from wa.agents import Agent
 from wa.store import Store
 from wa.whats.client import WhatsApp
 
@@ -41,7 +41,7 @@ async def subscribe(ctx: _GetContext) -> int:
 
 @dataclass
 class Handler:
-    agent: Agent
+    agent: agents.math.Agent
     whats: WhatsApp
     store: Store
 
