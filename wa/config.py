@@ -34,6 +34,9 @@ class Config(BaseSettings):
     DYNAMO_DB_TABLE_EVENTS: str
     """DynamoDB table name for WhatsApp events"""
 
+    DYNAMO_DB_TABLE_TOOLS: str
+    """DynamoDB table name for tools"""
+
     DYNAMO_DB_HOST: str | None = None
     """DynamoDB host. Used for local development"""
 

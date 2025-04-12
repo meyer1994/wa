@@ -56,7 +56,17 @@ tables:
 		--provisioned-throughput \
 			ReadCapacityUnits=1,WriteCapacityUnits=1 \
 	| tee
-
+	awslocal dynamodb create-table \
+		--table-name 'TOOLS_TABLE' \
+		--attribute-definitions \
+			AttributeName=id,AttributeType=S \
+			AttributeName=timestamp,AttributeType=S \
+		--key-schema \
+			AttributeName=id,KeyType=HASH \
+			AttributeName=timestamp,KeyType=RANGE \
+		--provisioned-throughput \
+			ReadCapacityUnits=1,WriteCapacityUnits=1 \
+	| tee
 
 bucket:
 	awslocal s3 mb s3://rag-bucket | tee
