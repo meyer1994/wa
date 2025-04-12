@@ -1272,8 +1272,44 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+bedrock = [
+    { name = "types-boto3-bedrock" },
+]
+bedrock-agent = [
+    { name = "types-boto3-bedrock-agent" },
+]
+bedrock-agent-runtime = [
+    { name = "types-boto3-bedrock-agent-runtime" },
+]
 s3 = [
     { name = "types-boto3-s3" },
+]
+
+[[package]]
+name = "types-boto3-bedrock"
+version = "1.37.29"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/ca/a51217ac46cda07705f5aa0345a1e9a3a0fdba58a0e78ee42a32f0a5ba56/types_boto3_bedrock-1.37.29.tar.gz", hash = "sha256:f42b098d98d606596c18149ddc5eca652b6e98c622a86380088bffa7c22e95a9", size = 43068 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/96/864a7f684183fefb0c6d97ee1b103f9d858e7aaddb48efb651b1ea6e04be/types_boto3_bedrock-1.37.29-py3-none-any.whl", hash = "sha256:c7b0dc4af1d0a17fba620a8615a223848875a7e6a8ad8647f77ef077ade482a0", size = 48457 },
+]
+
+[[package]]
+name = "types-boto3-bedrock-agent"
+version = "1.37.27"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/19/47ee7d44c494f1515f0182326ceb9f52409b9bda97dce2e96fe6e8f2df7c/types_boto3_bedrock_agent-1.37.27.tar.gz", hash = "sha256:49d63f2426a2019b8ff8ecb687aa47cfdc1a92d4a1d9a3e8d9974c8b232469dd", size = 51313 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/8c/3eb7b6b5a6c8ae151b3debf3ba6b09473e282c765bdfb4e5fc3593bc8f4b/types_boto3_bedrock_agent-1.37.27-py3-none-any.whl", hash = "sha256:7e4c16d008263d30d7e9e0a9f8f80ad1323cc4e523ea9f8f7e5876a287300a81", size = 57283 },
+]
+
+[[package]]
+name = "types-boto3-bedrock-agent-runtime"
+version = "1.37.22"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/b5/14853247fbc243c3277002d71d6c3b08a7b7f45a9d1c6e0145316eca5023/types_boto3_bedrock_agent_runtime-1.37.22.tar.gz", hash = "sha256:0b943d83c2d16a8d7fac5a3084a48b7a40f6bb9c30fc908b6252ad75cbaa4e90", size = 38497 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/b1/df69eb546acb6f00728987e61f021b9f2a0991fcae738f6cfbcfe1b87eb4/types_boto3_bedrock_agent_runtime-1.37.22-py3-none-any.whl", hash = "sha256:0e0321b7769098c9e17b3b80400b3f25cebf00dcdde3912788707a6a6d281ec8", size = 46293 },
 ]
 
 [[package]]
@@ -1375,6 +1411,7 @@ dev = [
     { name = "pylance" },
     { name = "pyright" },
     { name = "ruff" },
+    { name = "types-boto3", extra = ["bedrock", "bedrock-agent", "bedrock-agent-runtime"] },
     { name = "uvicorn" },
 ]
 
@@ -1401,6 +1438,7 @@ dev = [
     { name = "pylance", specifier = ">=0.25.2" },
     { name = "pyright", specifier = ">=1.1.399" },
     { name = "ruff", specifier = ">=0.11.0" },
+    { name = "types-boto3", extras = ["bedrock", "bedrock-agent", "bedrock-agent-runtime"], specifier = ">=1.37.33" },
     { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 

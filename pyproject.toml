@@ -27,6 +27,7 @@ dev = [
     "pyright>=1.1.399",
     "pylance>=0.25.2",
     "awscli-local>=0.22.0",
+    "types-boto3[bedrock,bedrock-agent,bedrock-agent-runtime]>=1.37.33",
 ]
 
 [tool.mypy]

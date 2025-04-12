@@ -117,9 +117,27 @@ class Handler:
     async def on_image(self, data: models.ImageMessage):
         logger.info("on_image(%s): %s", data.id, data.image.sha256)
         logger.debug("%s", data.model_dump_json())
+
         media = await self.whats.media(data.image.id)
+
+        *_, suffix = data.image.mime_type.split("/")
         key = "/".join(["whatsapp", "user", data.from_, "media", data.image.id])
-        await self.store.save(key, media, data.image.mime_type)
+        key_image = f"{key}.{suffix}"
+        key_meta = f"{key}.{suffix}.metadata.json"
+
+        meta = Metadata(
+            type="image",
+            from_=data.from_,
+            timestamp=data.timestamp,
+        )
+
+        meta = meta.model_dump_json()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(self.store.save(key_image, media, data.image.mime_type))
+            tg.create_task(self.store.save(key_meta, meta, "application/json"))
+            tg.create_task(self.whats.reply(data.from_, data.id, "image stored"))
+
         return key
 
 

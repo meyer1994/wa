@@ -39,6 +39,17 @@ class Metadata(BaseModel):
         }
 
 
+class MetadataImage(BaseModel):
+    type: str
+    from_: str
+    timestamp: dt.datetime
+    mime_type: str
+
+    @model_serializer
+    def _model_serializer(self) -> dict:
+        return {"type": self.type, "from": self.from_, "timestamp": self.timestamp}
+
+
 @dataclass
 class Store:
     bucket: Bucket
@@ -48,7 +59,7 @@ class Store:
         loop = asyncio.get_event_loop()
 
         if not isinstance(fin, str):
-            return await loop.run_in_executor(
+            await loop.run_in_executor(
                 None,
                 functools.partial(
                     self.bucket.upload_fileobj,
@@ -57,9 +68,10 @@ class Store:
                     ExtraArgs={"ContentType": mime},
                 ),
             )
+            return
 
         obj = self.bucket.Object(key)
-        return await loop.run_in_executor(
+        await loop.run_in_executor(
             None,
             functools.partial(
                 obj.put,
