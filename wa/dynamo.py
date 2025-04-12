@@ -132,6 +132,20 @@ class MessageImage(Message, discriminator="wa:message:image"):
         return MessageImage(from_=model.from_, timestamp=model.timestamp, data=data)
 
 
+class MessageDocument(Message, discriminator="wa:message:document"):
+    @property
+    def document(self) -> models.DocumentObject:
+        data = self.data.as_dict()
+        return models.DocumentObject.model_validate(data)
+
+    @staticmethod
+    def from_model(model: models.MessageObject) -> "MessageDocument":
+        if model.type != "document":
+            raise ValueError("Message type is not document")
+        data = model.model_dump(mode="json")
+        return MessageDocument(from_=model.from_, timestamp=model.timestamp, data=data)
+
+
 def init(cfg: Config):
     Message.Meta.table_name = cfg.DYNAMO_DB_TABLE_MESSAGES
     WhatsAppItem.Meta.table_name = cfg.DYNAMO_DB_TABLE_EVENTS

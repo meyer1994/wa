@@ -5,7 +5,7 @@ from typing import Annotated
 
 import pydantic_ai
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic_ai.messages import ImageUrl
+from pydantic_ai.messages import DocumentUrl, ImageUrl
 
 import wa.dynamo as db
 import wa.whats.models as models
@@ -59,7 +59,7 @@ class Handler:
         await item.asave()
         return item
 
-    async def on_text(self, data: models.TextMessage) -> db.MessageText:
+    async def on_text(self, data: models.TextMessage):
         logger.info("on_text(%s): %s", data.id, data.text)
         logger.debug("%s", data.model_dump_json())
 
@@ -77,7 +77,7 @@ class Handler:
             tg.create_task(message.asave())
             tg.create_task(self.whats.reply(data.from_, data.id, result.data))
 
-        return message
+        return result
 
     async def on_image(self, data: models.ImageMessage):
         logger.info("on_image(%s): %s", data.id, data.image.sha256)
@@ -86,8 +86,11 @@ class Handler:
         message = db.MessageImage.from_model(data)
 
         async with asyncio.TaskGroup() as tg:
-            media = await tg.create_task(self.whats.media(data.image.id))
-            history = await tg.create_task(message.alatest())
+            t_media = tg.create_task(self.whats.media(data.image.id))
+            t_history = tg.create_task(message.alatest())
+
+        media = await t_media
+        history = await t_history
 
         *_, suffix = data.image.mime_type.split("/")
         assert suffix, f"Invalid mime type: {data.image.mime_type}"
@@ -117,7 +120,50 @@ class Handler:
             tg.create_task(message.asave())
             tg.create_task(self.whats.reply(data.from_, data.id, result.data))
 
-        return key
+        return result
+
+    async def on_document(self, data: models.DocumentMessage):
+        logger.info("on_document(%s): %s", data.id, data.document.id)
+        logger.debug("%s", data.model_dump_json())
+
+        message = db.MessageDocument.from_model(data)
+
+        async with asyncio.TaskGroup() as tg:
+            t_media = tg.create_task(self.whats.media(data.document.id))
+            t_history = tg.create_task(message.alatest())
+
+        media = await t_media
+        history = await t_history
+
+        *_, suffix = data.document.mime_type.split("/")
+        assert suffix, f"Invalid mime type: {data.document.mime_type}"
+
+        key = "/".join(["whatsapp", "user", data.from_, "media", data.document.id])
+        key = f"{key}.{suffix}"
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(self.store.save(key, media, data.document.mime_type))
+            url = await tg.create_task(self.store.presigned(key))
+
+        REPLACE_HOST = "10dc1d33cd1911081f20af9532d6b7a8.serveo.net"
+        url = url.replace("localhost:4566", REPLACE_HOST)
+
+        prompt: list[DocumentUrl | str] = [DocumentUrl(url=url)]
+        if data.document.caption:
+            prompt.append(data.document.caption)
+
+        result = await self.agent.run(
+            user_prompt=prompt,
+            message_history=history,
+        )
+
+        message.model_messages = result.new_messages()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(message.asave())
+            tg.create_task(self.whats.reply(data.from_, data.id, result.data))
+
+        return result
 
 
 def dep_handler(
@@ -165,5 +211,9 @@ async def receive(ctx: _PostContext) -> dict[str, bool]:
                 tg.create_task(ctx.handler.on_image(msg), name="on_image")
             if msg.type == "text":
                 tg.create_task(ctx.handler.on_text(msg), name="on_text")
+            if msg.type == "document":
+                # does not work with openai
+                # tg.create_task(ctx.handler.on_document(msg), name="on_document")
+                pass
 
     return {"success": True}
