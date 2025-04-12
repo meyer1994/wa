@@ -46,21 +46,21 @@ class Handler:
 
     async def on_message(self, data: models.MessageObject) -> db.WhatsAppMessage:
         logger.info("on_message(%s): %s", data.id, data.type)
-        logger.debug("%s", data.model_dump_json(indent=2))
+        logger.debug("%s", data.model_dump_json())
         item = db.WhatsAppMessage.from_model(data)
         item.save()
         return item
 
     async def on_status(self, data: models.StatusObject) -> db.WhatsAppStatus:
         logger.info("on_status(%s): %s", data.id, data.status)
-        logger.debug("%s", data.model_dump_json(indent=2))
+        logger.debug("%s", data.model_dump_json())
         item = db.WhatsAppStatus.from_model(data)
         item.save()
         return item
 
     async def on_text(self, data: models.TextMessage) -> db.MessageText:
         logger.info("on_text(%s): %s", data.id, data.text)
-        logger.debug("%s", data.model_dump_json(indent=2))
+        logger.debug("%s", data.model_dump_json())
         message = db.MessageText.from_model(data)
         history = message.latest()
 
@@ -76,10 +76,10 @@ class Handler:
 
     async def on_image(self, data: models.ImageMessage):
         logger.info("on_image(%s): %s", data.id, data.image.sha256)
-        logger.debug("%s", data.model_dump_json(indent=2))
+        logger.debug("%s", data.model_dump_json())
         media = await self.whats.media(data.image.id)
         key = "/".join(["whatsapp", "user", data.from_, "media", data.image.id])
-        await self.store.save(key, media)
+        await self.store.save(key, media, data.image.mime_type)
         return key
 
 
@@ -112,7 +112,7 @@ _PostContext = Annotated[PostContext, Depends()]
 async def receive(ctx: _PostContext) -> dict[str, bool]:
     for entry in ctx.data.entry:
         logger.info("receive(%s)", entry.id)
-        logger.debug("%s", entry.model_dump_json(indent=2))
+        logger.debug("%s", entry.model_dump_json())
 
     async with asyncio.TaskGroup() as tg:
         # store whatsapp messages
