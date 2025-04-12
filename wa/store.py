@@ -79,3 +79,16 @@ class Store:
                 ContentType=mime,
             ),
         )
+
+    async def presigned(self, key: str, duration: int = 600):
+        logger.info("presigned(%s): %s", key, duration)
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            functools.partial(
+                self.bucket.meta.client.generate_presigned_url,
+                ClientMethod="get_object",
+                Params={"Bucket": self.bucket.name, "Key": key},
+                ExpiresIn=duration,
+            ),
+        )

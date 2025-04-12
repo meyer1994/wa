@@ -5,11 +5,12 @@ from typing import Annotated
 
 import pydantic_ai
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic_ai.messages import ImageUrl
 
 import wa.dynamo as db
 import wa.whats.models as models
 from wa import deps
-from wa.store import Metadata, Store
+from wa.store import Store
 from wa.whats.client import WhatsApp
 
 logger = logging.getLogger(__name__)
@@ -48,14 +49,14 @@ class Handler:
         logger.info("on_message(%s): %s", data.id, data.type)
         logger.debug("%s", data.model_dump_json())
         item = db.WhatsAppMessage.from_model(data)
-        item.save()
+        await item.asave()
         return item
 
     async def on_status(self, data: models.StatusObject) -> db.WhatsAppStatus:
         logger.info("on_status(%s): %s", data.id, data.status)
         logger.debug("%s", data.model_dump_json())
         item = db.WhatsAppStatus.from_model(data)
-        item.save()
+        await item.asave()
         return item
 
     async def on_text(self, data: models.TextMessage) -> db.MessageText:
@@ -63,7 +64,7 @@ class Handler:
         logger.debug("%s", data.model_dump_json())
 
         message = db.MessageText.from_model(data)
-        history = message.latest()
+        history = await message.alatest()
 
         result = await self.agent.run(
             user_prompt=message.body,
@@ -72,45 +73,9 @@ class Handler:
 
         message.model_messages = result.new_messages()
 
-        async def _save():
-            logger.info("_save()")
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, message.save)
-
-        async def _reply():
-            logger.info("_reply()")
-            await self.whats.reply(data.from_, data.id, result.data)
-
-        async def _store():
-            logger.info("_store()")
-
-            timestamp = data.timestamp.timestamp()
-            timestamp = int(timestamp)
-            timestamp = str(timestamp)
-
-            key = "/".join(["whatsapp", "user", data.from_, "text", timestamp])
-            key_text = f"{key}.txt"
-            key_meta = f"{key}.txt.metadata.json"
-
-            meta = Metadata(
-                type="text",
-                from_=data.from_,
-                timestamp=data.timestamp,
-            )
-
-            meta = meta.model_dump_json()
-
-            async with asyncio.TaskGroup() as tg:
-                tg.create_task(self.store.save(key_text, data.text.body, "text/plain"))
-                tg.create_task(self.store.save(key_meta, meta, "application/json"))
-
         async with asyncio.TaskGroup() as tg:
-            # now we can execute the tasks concurrently
-            tg.create_task(_reply())
-            tg.create_task(_store())
-            tg.create_task(_save())
-
-        data.text.body
+            tg.create_task(message.asave())
+            tg.create_task(self.whats.reply(data.from_, data.id, result.data))
 
         return message
 
@@ -118,25 +83,39 @@ class Handler:
         logger.info("on_image(%s): %s", data.id, data.image.sha256)
         logger.debug("%s", data.model_dump_json())
 
-        media = await self.whats.media(data.image.id)
-
-        *_, suffix = data.image.mime_type.split("/")
-        key = "/".join(["whatsapp", "user", data.from_, "media", data.image.id])
-        key_image = f"{key}.{suffix}"
-        key_meta = f"{key}.{suffix}.metadata.json"
-
-        meta = Metadata(
-            type="image",
-            from_=data.from_,
-            timestamp=data.timestamp,
-        )
-
-        meta = meta.model_dump_json()
+        message = db.MessageImage.from_model(data)
 
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(self.store.save(key_image, media, data.image.mime_type))
-            tg.create_task(self.store.save(key_meta, meta, "application/json"))
-            tg.create_task(self.whats.reply(data.from_, data.id, "image stored"))
+            media = await tg.create_task(self.whats.media(data.image.id))
+            history = await tg.create_task(message.alatest())
+
+        *_, suffix = data.image.mime_type.split("/")
+        assert suffix, f"Invalid mime type: {data.image.mime_type}"
+
+        key = "/".join(["whatsapp", "user", data.from_, "media", data.image.id])
+        key = f"{key}.{suffix}"
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(self.store.save(key, media, data.image.mime_type))
+            url = await tg.create_task(self.store.presigned(key))
+
+        REPLACE_HOST = "10dc1d33cd1911081f20af9532d6b7a8.serveo.net"
+        url = url.replace("localhost:4566", REPLACE_HOST)
+
+        prompt: list[ImageUrl | str] = [ImageUrl(url=url)]
+        if data.image.caption:
+            prompt.append(data.image.caption)
+
+        result = await self.agent.run(
+            user_prompt=prompt,
+            message_history=history,
+        )
+
+        message.model_messages = result.new_messages()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(message.asave())
+            tg.create_task(self.whats.reply(data.from_, data.id, result.data))
 
         return key
 

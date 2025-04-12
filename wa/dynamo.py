@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 import itertools
 from typing import Any
@@ -25,6 +26,10 @@ class WhatsAppItem(Model):
     timestamp = attr.UTCDateTimeAttribute(default=_now)
     data = attr.MapAttribute[str, Any](default=dict)
     type = attr.DiscriminatorAttribute()
+
+    async def asave(self):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.save)
 
 
 class WhatsAppMessage(WhatsAppItem, discriminator="whatsapp:item:message"):
@@ -89,6 +94,14 @@ class Message(Model):
         query = self.query(hash_key=self.from_, limit=limit, scan_index_forward=False)
         messages = itertools.chain.from_iterable(i.model_messages for i in query)
         return list(messages)
+
+    async def alatest(self, limit: int = 10) -> list[ModelMessage]:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.latest, limit)
+
+    async def asave(self):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.save)
 
 
 class MessageText(Message, discriminator="wa:message:text"):
