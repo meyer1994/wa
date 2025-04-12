@@ -1,65 +1,88 @@
 import logging
-from typing import Annotated
+import math
+from dataclasses import dataclass
 
-from fastapi import Depends
-from pydantic_ai import Agent
+from pydantic_ai import Agent as PydanticAgent
 from pydantic_ai.exceptions import ModelRetry
+from pydantic_ai.messages import (
+    ModelMessage,
+    ModelRequest,
+    SystemPromptPart,
+    UserContent,
+)
 from pydantic_ai.models.openai import OpenAIModel
-
-from wa.config import DepConfig
 
 logger = logging.getLogger(__name__)
 
 
 def add(a: float, b: float) -> float:
     """Adds two numbers together."""
-    logger.debug(f"Adding {a} and {b}")
+    logger.info(f"Adding {a} and {b}")
     return a + b
 
 
 def subtract(a: float, b: float) -> float:
     """Subtracts the second number from the first."""
-    logger.debug(f"Subtracting {b} from {a}")
+    logger.info(f"Subtracting {b} from {a}")
     return a - b
 
 
 def multiply(a: float, b: float) -> float:
     """Multiplies two numbers together."""
-    logger.debug(f"Multiplying {a} and {b}")
+    logger.info(f"Multiplying {a} and {b}")
     return a * b
 
 
 def divide(a: float, b: float) -> float:
     """Divides the first number by the second."""
-    logger.debug(f"Dividing {a} by {b}")
+    logger.info(f"Dividing {a} by {b}")
     if b == 0:
         raise ModelRetry("Cannot divide by zero")
     return a / b
 
 
-def dep_model(cfg: DepConfig) -> OpenAIModel:
-    return OpenAIModel(api_key=cfg.OPENAI_API_KEY, model_name="gpt-4o-mini")
+def sin(a: float) -> float:
+    """Returns the sine of a number."""
+    logger.info(f"Sine of {a}")
+    return math.sin(a)
 
 
-DepModel = Annotated[OpenAIModel, Depends(dep_model)]
+SYSTEM_PROMPT = """
+# Persona
+
+You are a helpful math assistant
+
+## Output Format
+
+The output should aways be PLAIN TEXT. You are allowed to use the following
+formatting syntax:
+
+*bold* -> for bold text
+_italic_ -> for italic text
+~strikethrough~ -> for strikethrough text
+```text``` -> for monospace text
+
+YOU MUST NOT USE ANY OTHER FORMATTING SYNTAX.
+YOU MUST NOT ESCAPE OUTPUT: eg. write `(` not `\\(`
+"""
 
 
-def dep_agent(model: DepModel):
-    agent = Agent(
-        model=model,
-        result_type=str,
-        system_prompt=(
-            "You are a helpful math assistant that can perform basic calculations.\n"
-            "When given a math problem, solve it step by step and provide the final result."
+@dataclass
+class Agent:
+    agent: PydanticAgent[None, str]
+
+    def run(self, prompt: str | list[UserContent], history: list[ModelMessage]):
+        system = ModelRequest(parts=[SystemPromptPart(SYSTEM_PROMPT)])
+        messages: list[ModelMessage] = [system, *history]
+        return self.agent.run(user_prompt=prompt, message_history=messages)
+
+
+def build_agent(model: OpenAIModel) -> Agent:
+    return Agent(
+        agent=PydanticAgent(
+            model=model,
+            result_type=str,
+            tools=[add, subtract, multiply, divide, sin],
+            system_prompt=SYSTEM_PROMPT,
         ),
     )
-
-    agent.tool_plain(add)
-    agent.tool_plain(subtract)
-    agent.tool_plain(multiply)
-    agent.tool_plain(divide)
-
-    return agent
-
-
-DepAgent = Annotated[Agent[None, str], Depends(dep_agent)]

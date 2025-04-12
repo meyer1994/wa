@@ -3,13 +3,13 @@ import logging
 from dataclasses import dataclass
 from typing import Annotated
 
-import pydantic_ai
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic_ai.messages import DocumentUrl, ImageUrl
+from pydantic_ai.messages import DocumentUrl, ImageUrl, UserContent
 
 import wa.dynamo as db
 import wa.whats.models as models
 from wa import deps
+from wa.agents import Agent
 from wa.store import Store
 from wa.whats.client import WhatsApp
 
@@ -41,7 +41,7 @@ async def subscribe(ctx: _GetContext) -> int:
 
 @dataclass
 class Handler:
-    agent: pydantic_ai.Agent[None, str]
+    agent: Agent
     whats: WhatsApp
     store: Store
 
@@ -66,11 +66,7 @@ class Handler:
         message = db.MessageText.from_model(data)
         history = await message.alatest()
 
-        result = await self.agent.run(
-            user_prompt=message.body,
-            message_history=history,
-        )
-
+        result = await self.agent.run(prompt=message.body, history=history)
         message.model_messages = result.new_messages()
 
         async with asyncio.TaskGroup() as tg:
@@ -105,15 +101,11 @@ class Handler:
         REPLACE_HOST = "10dc1d33cd1911081f20af9532d6b7a8.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
-        prompt: list[ImageUrl | str] = [ImageUrl(url=url)]
+        prompt: list[UserContent] = [ImageUrl(url=url)]
         if data.image.caption:
             prompt.append(data.image.caption)
 
-        result = await self.agent.run(
-            user_prompt=prompt,
-            message_history=history,
-        )
-
+        result = await self.agent.run(prompt=prompt, history=history)
         message.model_messages = result.new_messages()
 
         async with asyncio.TaskGroup() as tg:
@@ -174,11 +166,7 @@ def dep_handler(
     whats: deps.DepWhatsApp,
     store: deps.DepStore,
 ) -> Handler:
-    return Handler(
-        agent=agent,
-        whats=whats,
-        store=store,
-    )
+    return Handler(agent=agent, whats=whats, store=store)
 
 
 DepHandler = Annotated[Handler, Depends(dep_handler)]
