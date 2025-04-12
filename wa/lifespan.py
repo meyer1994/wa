@@ -6,8 +6,6 @@ from fastapi import FastAPI
 
 import wa.dynamo
 import wa.logs
-import wa.models
-import wa.whatsapp
 from wa.config import Config
 
 logger = logging.getLogger(__name__)

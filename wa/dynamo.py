@@ -7,7 +7,7 @@ from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse
 from pynamodb import attributes as attr
 from pynamodb.models import MetaProtocol, Model
 
-import wa.models as models
+import wa.whats.models as models
 from wa.config import Config
 
 

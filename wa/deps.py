@@ -8,8 +8,8 @@ import pydantic_ai.models.openai
 from fastapi import Body, Depends, Header, HTTPException, Request
 
 from wa.config import Config
-from wa.models import Webhook
-from wa.whatsapp import WhatsApp
+from wa.whats.client import WhatsApp
+from wa.whats.models import Webhook
 
 logger = logging.getLogger(__name__)
 

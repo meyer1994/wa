@@ -7,9 +7,9 @@ import pydantic_ai
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 import wa.dynamo as db
-import wa.models as models
+import wa.whats.models as models
 from wa import deps
-from wa.whatsapp import WhatsApp
+from wa.whats.client import WhatsApp
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

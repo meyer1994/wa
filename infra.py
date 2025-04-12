@@ -5,6 +5,8 @@ from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
+from aws_cdk import aws_s3 as s3
+from cdklabs.generative_ai_cdk_constructs import bedrock
 from constructs import Construct
 
 from wa.config import Config
@@ -87,6 +89,35 @@ class WhatsAppStack(Stack):
 
         t_messages.grant_read_write_data(lambda_function)
         t_events.grant_read_write_data(lambda_function)
+
+        rag_bucket = s3.Bucket(
+            self,
+            f"{id}-rag-bucket",
+            bucket_name=f"{id}-rag-bucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            versioned=False,
+        )
+
+        bedrock_knowledge_base = bedrock.VectorKnowledgeBase(
+            self,
+            f"{id}-bedrock-knowledge-base",
+            name=f"{id}-bedrock-knowledge-base",
+            embeddings_model=bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
+            instruction=(
+                "Use this knowledge base to answer questions about books. "
+                "It contains the full text of novels."
+            ),
+            description="This knowledge base contains the full text of novels.",
+        )
+
+        s3_data_source = bedrock.S3DataSource(
+            self,
+            f"{id}-s3-data-source",
+            bucket=rag_bucket,
+            knowledge_base=bedrock_knowledge_base,
+            data_deletion_policy=bedrock.DataDeletionPolicy.DELETE,
+        )
 
         # Create API Gateway
         api = apigw.LambdaRestApi(
