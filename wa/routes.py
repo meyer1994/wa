@@ -145,6 +145,9 @@ class Handler:
             tg.create_task(self.store.save(key, media, data.document.mime_type))
             url = await tg.create_task(self.store.presigned(key))
 
+        # stop here as it does not work with openai
+        return
+
         REPLACE_HOST = "10dc1d33cd1911081f20af9532d6b7a8.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
@@ -212,8 +215,6 @@ async def receive(ctx: _PostContext) -> dict[str, bool]:
             if msg.type == "text":
                 tg.create_task(ctx.handler.on_text(msg), name="on_text")
             if msg.type == "document":
-                # does not work with openai
-                # tg.create_task(ctx.handler.on_document(msg), name="on_document")
-                pass
+                tg.create_task(ctx.handler.on_document(msg), name="on_document")
 
     return {"success": True}

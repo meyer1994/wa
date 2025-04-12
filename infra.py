@@ -6,7 +6,6 @@ from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
 from aws_cdk import aws_s3 as s3
-from cdklabs.generative_ai_cdk_constructs import bedrock
 from constructs import Construct
 
 from wa.config import Config
@@ -46,17 +45,17 @@ class WhatsAppStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        b_rag = s3.Bucket(
+        bucket = s3.Bucket(
             self,
-            f"{id}-rag-bucket",
-            bucket_name=f"{id}-rag-bucket",
+            f"{id}-data-bucket",
+            bucket_name=f"{id}-data-bucket",
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
             versioned=False,
         )
 
         # Create Lambda function for FastAPI with Mangum adapter
-        lambda_function = lambda_.Function(
+        function = lambda_.Function(
             self,
             # meta
             f"{id}-function",
@@ -76,7 +75,7 @@ class WhatsAppStack(Stack):
                 "DYNAMO_DB_TABLE_EVENTS": t_events.table_name,
                 "DYNAMO_DB_TABLE_MESSAGES": t_messages.table_name,
                 # s3
-                "AWS_S3_BUCKET_RAG": b_rag.bucket_name,
+                "AWS_S3_BUCKET_RAG": bucket.bucket_name,
                 # whatsapp
                 "WHATSAPP_SENDER_ID": cfg.WHATSAPP_SENDER_ID,
                 "WHATSAPP_SENDER_NUMBER": cfg.WHATSAPP_SENDER_NUMBER,
@@ -99,36 +98,16 @@ class WhatsAppStack(Stack):
             ),
         )
 
-        t_messages.grant_read_write_data(lambda_function)
-        t_events.grant_read_write_data(lambda_function)
-        b_rag.grant_read_write(lambda_function)
-
-        bedrock_knowledge_base = bedrock.VectorKnowledgeBase(
-            self,
-            f"{id}-bedrock-knowledge-base",
-            name=f"{id}-bedrock-knowledge-base",
-            embeddings_model=bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
-            instruction=(
-                "Use this knowledge base to answer questions about books. "
-                "It contains the full text of novels."
-            ),
-            description="This knowledge base contains the full text of novels.",
-        )
-
-        s3_data_source = bedrock.S3DataSource(
-            self,
-            f"{id}-s3-data-source",
-            bucket=b_rag,
-            knowledge_base=bedrock_knowledge_base,
-            data_deletion_policy=bedrock.DataDeletionPolicy.DELETE,
-        )
+        t_messages.grant_read_write_data(function)
+        t_events.grant_read_write_data(function)
+        bucket.grant_read_write(function)
 
         # Create API Gateway
         api = apigw.LambdaRestApi(
             self,
             f"{id}-api",
             rest_api_name=f"{id}-api",
-            handler=lambda_function,
+            handler=function,
             proxy=True,
             # deploy
             deploy=True,
