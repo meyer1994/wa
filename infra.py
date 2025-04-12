@@ -72,8 +72,6 @@ class WhatsAppStack(Stack):
             timeout=Duration.seconds(10),
             memory_size=1024,
             environment={
-                # debug
-                "DEBUG": "true",
                 # dynamo
                 "DYNAMO_DB_TABLE_EVENTS": t_events.table_name,
                 "DYNAMO_DB_TABLE_MESSAGES": t_messages.table_name,

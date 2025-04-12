@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 import wa.dynamo as db
 import wa.whats.models as models
 from wa import deps
-from wa.store import Store
+from wa.store import Metadata, Store
 from wa.whats.client import WhatsApp
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ class Handler:
     async def on_text(self, data: models.TextMessage) -> db.MessageText:
         logger.info("on_text(%s): %s", data.id, data.text)
         logger.debug("%s", data.model_dump_json())
+
         message = db.MessageText.from_model(data)
         history = message.latest()
 
@@ -70,8 +71,47 @@ class Handler:
         )
 
         message.model_messages = result.new_messages()
-        await self.whats.reply(data.from_, data.id, result.data)
-        message.save()
+
+        async def _save():
+            logger.info("_save()")
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, message.save)
+
+        async def _reply():
+            logger.info("_reply()")
+            await self.whats.reply(data.from_, data.id, result.data)
+
+        async def _store():
+            logger.info("_store()")
+
+            timestamp = data.timestamp.timestamp()
+            timestamp = int(timestamp)
+            timestamp = str(timestamp)
+
+            key = "/".join(["whatsapp", "user", data.from_, "text", timestamp])
+            key_text = f"{key}.txt"
+            key_meta = f"{key}.txt.metadata.json"
+
+            meta = Metadata(
+                type="text",
+                from_=data.from_,
+                timestamp=data.timestamp,
+            )
+
+            meta = meta.model_dump_json()
+
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(self.store.save(key_text, data.text.body, "text/plain"))
+                tg.create_task(self.store.save(key_meta, meta, "application/json"))
+
+        async with asyncio.TaskGroup() as tg:
+            # now we can execute the tasks concurrently
+            tg.create_task(_reply())
+            tg.create_task(_store())
+            tg.create_task(_save())
+
+        data.text.body
+
         return message
 
     async def on_image(self, data: models.ImageMessage):

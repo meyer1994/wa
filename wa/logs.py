@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import sys
 
 import uvicorn.logging
 from asgi_correlation_id import CorrelationIdFilter
@@ -35,26 +36,36 @@ CONFIG = {
             "formatter": "default",
             "filters": ["correlation_id"],
             "class": logging.StreamHandler,
+            "stream": sys.stderr,
         },
         "access": {
             "formatter": "access",
             "filters": ["correlation_id"],
             "class": logging.StreamHandler,
+            "stream": sys.stderr,
         },
     },
     "loggers": {
         "wa": {
+            "propagate": False,
             "level": logging.DEBUG,
             "handlers": ["default"],
         },
         "uvicorn.access": {
+            "propagate": False,
             "level": logging.INFO,
             "handlers": ["access"],
         },
         # "openai": {
         #     "level": logging.DEBUG,
         #     "handlers": ["default"],
+        #     "propagate": False,
         # },
+        "pynamodb": {
+            "level": logging.DEBUG,
+            "handlers": ["default"],
+            "propagate": False,
+        },
     },
 }
 
