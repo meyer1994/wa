@@ -32,9 +32,7 @@ def dep_model(cfg: DepConfig):
             openai_client=AsyncOpenAI(
                 api_key=cfg.OPENAI_API_KEY,
                 base_url="https://oai.helicone.ai/v1",
-                default_headers={
-                    "Helicone-Auth": "Bearer sk-helicone-5cwm6da-bhqebai-rfilfyy-tvph75q"
-                },
+                default_headers={"Helicone-Auth": f"Bearer {cfg.HELICONE_API_KEY}"},
             )
         ),
     )

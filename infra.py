@@ -11,6 +11,54 @@ from constructs import Construct
 from wa.config import Config
 
 
+def dynamo_graph_widget(table: dynamodb.Table) -> cloudwatch.GraphWidget:
+    return cloudwatch.GraphWidget(
+        title=f"Capacity - {table.table_name}",
+        left=[
+            table.metric_consumed_read_capacity_units(),
+            table.metric_consumed_write_capacity_units(),
+        ],
+        right=[
+            table.metric_successful_request_latency(
+                unit=cloudwatch.Unit.MILLISECONDS,
+                dimensions_map={
+                    "TableName": table.table_name,
+                    "Operation": "GetItem",
+                },
+            ),
+            table.metric_successful_request_latency(
+                unit=cloudwatch.Unit.MILLISECONDS,
+                dimensions_map={
+                    "TableName": table.table_name,
+                    "Operation": "PutItem",
+                },
+            ),
+            table.metric_successful_request_latency(
+                unit=cloudwatch.Unit.MILLISECONDS,
+                dimensions_map={
+                    "TableName": table.table_name,
+                    "Operation": "UpdateItem",
+                },
+            ),
+            table.metric_successful_request_latency(
+                unit=cloudwatch.Unit.MILLISECONDS,
+                dimensions_map={
+                    "TableName": table.table_name,
+                    "Operation": "Query",
+                },
+            ),
+            table.metric_successful_request_latency(
+                unit=cloudwatch.Unit.MILLISECONDS,
+                dimensions_map={
+                    "TableName": table.table_name,
+                    "Operation": "Scan",
+                },
+            ),
+        ],
+        width=8,
+    )
+
+
 class WhatsAppStack(Stack):
     def __init__(self, scope: Construct, id: str, cfg: Config, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
@@ -92,6 +140,8 @@ class WhatsAppStack(Stack):
                 "DYNAMO_DB_TABLE_TOOLS": t_tools.table_name,
                 # s3
                 "AWS_S3_BUCKET_RAG": bucket.bucket_name,
+                # helicone
+                "HELICONE_API_KEY": cfg.HELICONE_API_KEY,
                 # whatsapp
                 "WHATSAPP_SENDER_ID": cfg.WHATSAPP_SENDER_ID,
                 "WHATSAPP_SENDER_NUMBER": cfg.WHATSAPP_SENDER_NUMBER,
@@ -215,6 +265,13 @@ class WhatsAppStack(Stack):
         )
 
         # Row 2
+        dashboard.add_widgets(
+            dynamo_graph_widget(t_messages),
+            dynamo_graph_widget(t_events),
+            dynamo_graph_widget(t_tools),
+        )
+
+        # Row 3
         dashboard.add_widgets(
             # Logs
             cloudwatch.LogQueryWidget(

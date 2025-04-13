@@ -14,28 +14,28 @@ agent = Agent(
 
 
 @agent.tool_plain
-def add(a: float, b: float) -> float:
+async def add(a: float, b: float) -> float:
     """Adds two numbers together."""
     logger.info(f"Adding {a} and {b}")
     return a + b
 
 
 @agent.tool_plain
-def subtract(a: float, b: float) -> float:
+async def subtract(a: float, b: float) -> float:
     """Subtracts the second number from the first."""
     logger.info(f"Subtracting {b} from {a}")
     return a - b
 
 
 @agent.tool_plain
-def multiply(a: float, b: float) -> float:
+async def multiply(a: float, b: float) -> float:
     """Multiplies two numbers together."""
     logger.info(f"Multiplying {a} and {b}")
     return a * b
 
 
 @agent.tool_plain
-def divide(a: float, b: float) -> float:
+async def divide(a: float, b: float) -> float:
     """Divides the first number by the second."""
     logger.info(f"Dividing {a} by {b}")
     if b == 0:
@@ -44,7 +44,7 @@ def divide(a: float, b: float) -> float:
 
 
 @agent.tool_plain
-def sin(a: float) -> float:
+async def sin(a: float) -> float:
     """Returns the sine of a number."""
     logger.info(f"Sine of {a}")
     return math.sin(a)

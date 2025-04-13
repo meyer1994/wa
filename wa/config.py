@@ -37,6 +37,9 @@ class Config(BaseSettings):
     DYNAMO_DB_TABLE_TOOLS: str
     """DynamoDB table name for tools"""
 
+    HELICONE_API_KEY: str
+    """Helicone API key"""
+
     DYNAMO_DB_HOST: str | None = None
     """DynamoDB host. Used for local development"""
 
