@@ -3,7 +3,6 @@ import logging
 from dataclasses import dataclass
 
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models import Model
 
 import wa.dynamo as db
 
@@ -15,7 +14,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class State:
     todo: db.ToolTodo
-    model: Model
 
 
 Context = RunContext[State]

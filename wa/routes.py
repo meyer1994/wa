@@ -72,8 +72,7 @@ class Handler:
         tool_todo = await db.ToolTodo.afetch(data.from_)
         logger.info(f"{tool_todo.data=}")
 
-        context = State(todo=tool_todo, model=self.model)
-        logger.info("context: %s", context)
+        context = State(todo=tool_todo)
 
         result = await self.agent.run(
             user_prompt=message.body,
