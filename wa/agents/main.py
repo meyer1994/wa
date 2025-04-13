@@ -38,12 +38,23 @@ async def step_todos(ctx: Context) -> str:
 @agent.tool
 async def agent_todos(ctx: Context, prompt: str) -> str:
     logger.info("agent_todos(%s)", ctx.deps.todo.id)
-    result = await todos.agent.run(prompt, deps=ctx.deps.todo, model=ctx.model)
+    result = await todos.agent.run(
+        prompt,
+        deps=ctx.deps.todo,
+        model=ctx.model,
+        message_history=ctx.messages,
+    )
+    ctx.messages.extend(result.new_messages())
     return result.data
 
 
 @agent.tool
 async def agent_math(ctx: Context, prompt: str) -> float:
     logger.info("agent_math()")
-    result = await math.agent.run(prompt, model=ctx.model)
+    result = await math.agent.run(
+        prompt,
+        model=ctx.model,
+        message_history=ctx.messages,
+    )
+    ctx.messages.extend(result.new_messages())
     return result.data
