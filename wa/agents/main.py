@@ -2,7 +2,9 @@ import datetime as dt
 import logging
 from dataclasses import dataclass
 
+from duckduckgo_search import DDGS
 from pydantic_ai import Agent, RunContext
+from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
 
 import wa.dynamo as db
 
@@ -19,7 +21,11 @@ class State:
 Context = RunContext[State]
 
 
-agent = Agent(result_type=str, deps_type=State)
+agent = Agent(
+    result_type=str,
+    deps_type=State,
+    tools=[duckduckgo_search_tool(DDGS(), max_results=5)],
+)
 
 
 @agent.system_prompt
@@ -32,6 +38,14 @@ async def step_todos(ctx: Context) -> str:
 
     You help with todo lists.
     You help with math problems.
+
+    DO NOT RETURN MARKDOWN, ONLY TEXT.
+
+    You are allowed to format your text using ONLY the following tags:
+
+    - `*TEXT*` for bold text
+    - `_TEXT_` for italic text
+    - `~TEXT~` for strikethrough text
     """
 
 

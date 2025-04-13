@@ -115,7 +115,7 @@ class Handler:
             tg.create_task(self.store.save(key, media, data.image.mime_type))
             url = await tg.create_task(self.store.presigned(key))
 
-        REPLACE_HOST = "10dc1d33cd1911081f20af9532d6b7a8.serveo.net"
+        REPLACE_HOST = "dec398df1e282ca06f4c912aaf63c9f8.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
         prompt: list[UserContent] = [ImageUrl(url=url)]
