@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from duckduckgo_search import DDGS
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
+from pydantic_ai.models import ModelSettings
 
 import wa.dynamo as db
 
@@ -50,14 +51,23 @@ async def step_todos(ctx: Context) -> str:
 
 
 @agent.tool
-async def agent_todos(ctx: Context, prompt: str) -> str:
+async def agent_todos(ctx: Context, prompt: str):
     logger.info("agent_todos(%s)", ctx.deps.todo.id)
-    result = await todos.agent.run(prompt, deps=ctx.deps.todo, model=ctx.model)
+    result = await todos.agent.run(
+        prompt,
+        deps=ctx.deps.todo,
+        model=ctx.model,
+        model_settings=ModelSettings(temperature=0.0, max_tokens=100),
+    )
     return result.data
 
 
 @agent.tool
 async def agent_math(ctx: Context, prompt: str) -> float:
     logger.info("agent_math()")
-    result = await math.agent.run(prompt, model=ctx.model)
+    result = await math.agent.run(
+        prompt,
+        model=ctx.model,
+        model_settings=ModelSettings(temperature=0.0, max_tokens=10),
+    )
     return result.data
