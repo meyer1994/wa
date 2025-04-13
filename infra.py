@@ -150,6 +150,8 @@ class WhatsAppStack(Stack):
                 "WHATSAPP_APP_SECRET": cfg.WHATSAPP_APP_SECRET,
                 # openai
                 "OPENAI_API_KEY": cfg.OPENAI_API_KEY,
+                # gemini
+                "GEMINI_API_KEY": cfg.GEMINI_API_KEY,
             },
             # debugging
             profiling=True,  # not supported in docker image function

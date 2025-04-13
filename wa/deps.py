@@ -6,7 +6,10 @@ import boto3
 from fastapi import Body, Depends, Header, HTTPException, Request
 from openai import AsyncOpenAI
 from pydantic_ai import Agent
+from pydantic_ai.models import Model
+from pydantic_ai.models.gemini import GeminiModel
 from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.google_gla import GoogleGLAProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 
 import wa.agents as agents
@@ -25,7 +28,13 @@ def dep_config() -> Config:
 DepConfig = Annotated[Config, Depends(dep_config)]
 
 
-def dep_model(cfg: DepConfig):
+def dep_model(cfg: DepConfig) -> Model:
+    if cfg.GEMINI_API_KEY:
+        return GeminiModel(
+            model_name="gemini-2.0-flash",
+            provider=GoogleGLAProvider(api_key=cfg.GEMINI_API_KEY),
+        )
+
     return OpenAIModel(
         model_name="gpt-4o-mini",
         provider=OpenAIProvider(
@@ -38,7 +47,7 @@ def dep_model(cfg: DepConfig):
     )
 
 
-DepModel = Annotated[OpenAIModel, Depends(dep_model)]
+DepModel = Annotated[Model, Depends(dep_model)]
 
 
 def dep_agent():

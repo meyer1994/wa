@@ -40,6 +40,9 @@ class Config(BaseSettings):
     HELICONE_API_KEY: str
     """Helicone API key"""
 
+    GEMINI_API_KEY: str
+    """Google Gemini API key"""
+
     DYNAMO_DB_HOST: str | None = None
     """DynamoDB host. Used for local development"""
 

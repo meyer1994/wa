@@ -1483,7 +1483,7 @@ requires-dist = [
     { name = "mangum", specifier = ">=0.19.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-ai", specifier = ">=0.0.40" },
-    { name = "pydantic-ai-slim", extras = ["duckduckgo", "openai"], specifier = ">=0.0.55" },
+    { name = "pydantic-ai-slim", extras = ["duckduckgo", "gemini", "openai"], specifier = ">=0.0.55" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
     { name = "pynamodb", specifier = ">=6.0.2" },
     { name = "types-boto3", extras = ["s3"], specifier = ">=1.37.33" },
