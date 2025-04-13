@@ -26,6 +26,8 @@ class WhatsApp:
 
     client: AsyncClient = field(init=False, repr=False)
 
+    EMOJI_THINKING = "\U0001f914"
+
     def __post_init__(self) -> None:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         self.client = AsyncClient(base_url=self.base_url, headers=headers)
@@ -131,3 +133,23 @@ class WhatsApp:
         signature = hmac.new(secret, data, hashlib.sha256)
         signature = signature.hexdigest()
         return secrets.compare_digest(signature, sig)
+
+    async def react(self, to: str, id: str, reaction: str):
+        response = await self.client.post(
+            url=self._url("messages"),
+            json={
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": self._num(to),
+                "type": "reaction",
+                "reaction": {"message_id": id, "emoji": reaction},
+            },
+        )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError:
+            logger.error("%s", response.json())
+            raise
+
+        return response.json()

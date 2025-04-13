@@ -67,7 +67,17 @@ class Handler:
         logger.debug("%s", data.model_dump_json())
 
         message = db.MessageText.from_model(data)
-        history = await message.alatest()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(
+                self.whats.react(
+                    data.from_,
+                    data.id,
+                    self.whats.EMOJI_THINKING,
+                )
+            )
+
+            history = await tg.create_task(message.alatest())
 
         tool_todo = await db.ToolTodo.afetch(data.from_)
         logger.info(f"{tool_todo.data=}")

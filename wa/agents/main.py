@@ -57,7 +57,7 @@ async def agent_todos(ctx: Context, prompt: str):
         prompt,
         deps=ctx.deps.todo,
         model=ctx.model,
-        model_settings=ModelSettings(temperature=0.0, max_tokens=100),
+        model_settings=ModelSettings(temperature=0.0),
     )
     return result.data
 
@@ -68,6 +68,6 @@ async def agent_math(ctx: Context, prompt: str) -> float:
     result = await math.agent.run(
         prompt,
         model=ctx.model,
-        model_settings=ModelSettings(temperature=0.0, max_tokens=10),
+        model_settings=ModelSettings(temperature=0.0),
     )
     return result.data
