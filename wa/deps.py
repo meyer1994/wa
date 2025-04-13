@@ -5,6 +5,7 @@ from typing import Annotated
 import boto3
 from fastapi import Body, Depends, Header, HTTPException, Request
 from openai import AsyncOpenAI
+from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
@@ -42,11 +43,11 @@ def dep_model(cfg: DepConfig):
 DepModel = Annotated[OpenAIModel, Depends(dep_model)]
 
 
-def dep_agent(model: DepModel):
-    return agents.math.build_agent(model)
+def dep_agent():
+    return agents.agent
 
 
-DepAgent = Annotated[agents.math.Agent, Depends(dep_agent)]
+DepAgent = Annotated[Agent[agents.State, str], Depends(dep_agent)]
 
 
 def dep_whatsapp(cfg: DepConfig):

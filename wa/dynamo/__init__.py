@@ -1,7 +1,7 @@
 from wa.config import Config
 
 from .messages import Message, MessageDocument, MessageImage, MessageText
-from .tools import Tool, ToolTodo
+from .tools import Tool, ToolTodo, ToolTodoItem
 from .whatsapp import WhatsAppItem, WhatsAppMessage, WhatsAppStatus
 
 

@@ -43,7 +43,7 @@ tables:
 			AttributeName=id,KeyType=HASH \
 			AttributeName=key,KeyType=RANGE \
 		--provisioned-throughput \
-			ReadCapacityUnits=1,WriteCapacityUnits=1 
+			ReadCapacityUnits=1,WriteCapacityUnits=1 \
 	| tee
 	awslocal dynamodb create-table \
 		--table-name 'MESSAGES_TABLE' \
@@ -60,10 +60,10 @@ tables:
 		--table-name 'TOOLS_TABLE' \
 		--attribute-definitions \
 			AttributeName=id,AttributeType=S \
-			AttributeName=timestamp,AttributeType=S \
+			AttributeName=tool,AttributeType=S \
 		--key-schema \
 			AttributeName=id,KeyType=HASH \
-			AttributeName=timestamp,KeyType=RANGE \
+			AttributeName=tool,KeyType=RANGE \
 		--provisioned-throughput \
 			ReadCapacityUnits=1,WriteCapacityUnits=1 \
 	| tee

@@ -4,12 +4,14 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic_ai import Agent
 from pydantic_ai.messages import DocumentUrl, ImageUrl, UserContent
+from pydantic_ai.models import Model
 
-import wa.agents as agents
+import wa.deps as deps
 import wa.dynamo as db
 import wa.whats.models as models
-from wa import deps
+from wa.agents import State
 from wa.store import Store
 from wa.whats.client import WhatsApp
 
@@ -41,7 +43,8 @@ async def subscribe(ctx: _GetContext) -> int:
 
 @dataclass
 class Handler:
-    agent: agents.math.Agent
+    agent: Agent[State, str]
+    model: Model
     whats: WhatsApp
     store: Store
 
@@ -66,8 +69,23 @@ class Handler:
         message = db.MessageText.from_model(data)
         history = await message.alatest()
 
-        result = await self.agent.run(prompt=message.body, history=history)
+        tool_todo = await db.ToolTodo.afetch(data.from_)
+        logger.info(f"{tool_todo.data=}")
+
+        context = State(todo=tool_todo, model=self.model)
+        logger.info("context: %s", context)
+
+        result = await self.agent.run(
+            user_prompt=message.body,
+            message_history=history,
+            deps=context,
+            model=self.model,
+        )
         message.model_messages = result.new_messages()
+
+        for msg in result.new_messages():
+            for part in msg.parts:
+                logger.info("part: %s", part)
 
         async with asyncio.TaskGroup() as tg:
             tg.create_task(message.asave())
@@ -105,7 +123,11 @@ class Handler:
         if data.image.caption:
             prompt.append(data.image.caption)
 
-        result = await self.agent.run(prompt=prompt, history=history)
+        result = await self.agent.run(
+            user_prompt=prompt,
+            message_history=history,
+            model=self.model,
+        )
         message.model_messages = result.new_messages()
 
         async with asyncio.TaskGroup() as tg:
@@ -163,10 +185,11 @@ class Handler:
 
 def dep_handler(
     agent: deps.DepAgent,
+    model: deps.DepModel,
     whats: deps.DepWhatsApp,
     store: deps.DepStore,
 ) -> Handler:
-    return Handler(agent=agent, whats=whats, store=store)
+    return Handler(agent=agent, model=model, whats=whats, store=store)
 
 
 DepHandler = Annotated[Handler, Depends(dep_handler)]
