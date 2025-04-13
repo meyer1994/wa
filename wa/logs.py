@@ -44,7 +44,7 @@ CONFIG = {
     },
     "loggers": {
         "wa": {
-            "level": logging.INFO,
+            "level": logging.DEBUG,
             "handlers": ["default"],
         },
         "uvicorn.access": {
@@ -60,7 +60,7 @@ CONFIG = {
             "handlers": ["default"],
         },
         "pynamodb": {
-            "level": logging.WARNING,
+            "level": logging.INFO,
             "handlers": ["default"],
         },
     },

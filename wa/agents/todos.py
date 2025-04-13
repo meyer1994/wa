@@ -20,21 +20,30 @@ Context = RunContext[db.ToolTodo]
 @agent.tool
 async def create_todo(ctx: Context, title: str, completed: bool = False) -> str:
     """Creates a new todo item and returns its index."""
-    item = await ctx.deps.create(title, completed)
+    index = len(ctx.deps.data.items)
+    item = db.ToolTodoItem(index=index, title=title, completed=completed)
+    ctx.deps.data.items.append(item)
+    await ctx.deps.asave()
+    await ctx.deps.arefresh()
     return f"Todo {item.index} created."
 
 
 @agent.tool
 async def complete_todo(ctx: Context, index: int):
     """Completes a todo item and returns the item."""
-    await ctx.deps.complete(index)
+    item = ctx.deps.data.items[index]
+    item.completed = True
+    await ctx.deps.asave()
+    await ctx.deps.arefresh()
     return f"Todo {index} completed."
 
 
 @agent.tool
 async def remove_todo(ctx: Context, index: int):
     """Removes a todo item and returns the item."""
-    await ctx.deps.remove(index)
+    ctx.deps.data.items.pop(index)
+    await ctx.deps.asave()
+    await ctx.deps.arefresh()
     return f"Todo {index} removed."
 
 

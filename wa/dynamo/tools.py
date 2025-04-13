@@ -40,9 +40,13 @@ class Tool(Model):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, cls.fetch, id)
 
+    async def arefresh(self):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.refresh)
+
 
 class ToolTodoItem(attr.MapAttribute):
-    index = attr.BooleanAttribute(default=False)
+    index = attr.NumberAttribute()
     title = attr.UnicodeAttribute()
     completed = attr.BooleanAttribute(default=False)
 
@@ -55,21 +59,3 @@ class ToolTodo(Tool, discriminator="wa:tool:todo"):
     NAME = "TODO"
 
     data = ToolTodoState(default=ToolTodoState)
-
-    async def create(self, title: str, completed: bool = False) -> ToolTodoItem:
-        index = len(self.data.items)
-        item = ToolTodoItem(index=index, title=title, completed=completed)
-        self.data.items.append(item)
-        await self.asave()
-        return item
-
-    async def complete(self, index: int) -> ToolTodoItem:
-        item = self.data.items[index]
-        item.completed = True
-        await self.asave()
-        return item
-
-    async def remove(self, index: int) -> ToolTodoItem:
-        item = self.data.items.pop(index)
-        await self.asave()
-        return item

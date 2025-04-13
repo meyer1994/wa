@@ -115,7 +115,7 @@ class Handler:
             tg.create_task(self.store.save(key, media, data.image.mime_type))
             url = await tg.create_task(self.store.presigned(key))
 
-        REPLACE_HOST = "dec398df1e282ca06f4c912aaf63c9f8.serveo.net"
+        REPLACE_HOST = "3d8f15ab012cae6a929ddfcf9c5ae32d.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
         prompt: list[UserContent] = [ImageUrl(url=url)]
@@ -159,9 +159,9 @@ class Handler:
             url = await tg.create_task(self.store.presigned(key))
 
         # stop here as it does not work with openai
-        return
+        # return
 
-        REPLACE_HOST = "10dc1d33cd1911081f20af9532d6b7a8.serveo.net"
+        REPLACE_HOST = "3d8f15ab012cae6a929ddfcf9c5ae32d.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
         prompt: list[DocumentUrl | str] = [DocumentUrl(url=url)]
@@ -171,6 +171,7 @@ class Handler:
         result = await self.agent.run(
             user_prompt=prompt,
             message_history=history,
+            model=self.model,
         )
 
         message.model_messages = result.new_messages()
