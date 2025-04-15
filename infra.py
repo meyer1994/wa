@@ -108,6 +108,21 @@ class WhatsAppStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
+        t_cron = dynamodb.Table(
+            self,
+            id=f"{id}-table-cron",
+            table_name=f"{id}-table-cron",
+            partition_key=dynamodb.Attribute(
+                name="id",
+                type=dynamodb.AttributeType.STRING,
+            ),
+            sort_key=dynamodb.Attribute(
+                name="index",
+                type=dynamodb.AttributeType.NUMBER,
+            ),
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
         bucket = s3.Bucket(
             self,
             f"{id}-data-bucket",
@@ -138,6 +153,7 @@ class WhatsAppStack(Stack):
                 "DYNAMO_DB_TABLE_EVENTS": t_events.table_name,
                 "DYNAMO_DB_TABLE_MESSAGES": t_messages.table_name,
                 "DYNAMO_DB_TABLE_TOOLS": t_tools.table_name,
+                "DYNAMO_DB_TABLE_CRON": t_cron.table_name,
                 # s3
                 "AWS_S3_BUCKET_RAG": bucket.bucket_name,
                 # helicone
@@ -169,6 +185,7 @@ class WhatsAppStack(Stack):
         t_messages.grant_read_write_data(function)
         t_events.grant_read_write_data(function)
         t_tools.grant_read_write_data(function)
+        t_cron.grant_read_write_data(function)
         bucket.grant_read_write(function)
 
         # Create API Gateway
