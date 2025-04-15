@@ -15,7 +15,8 @@ dependencies = [
     "pydantic-settings>=2.8.1",
     "types-boto3[s3]>=1.37.33",
     "pynamodb>=6.0.2",
-    "pydantic-ai-slim[duckduckgo,gemini,openai]>=0.0.55",
+    "pydantic-ai-slim[duckduckgo,openai]>=0.0.55",
+    "croniter>=6.0.0",
 ]
 
 [dependency-groups]
@@ -28,7 +29,7 @@ dev = [
     "pyright>=1.1.399",
     "pylance>=0.25.2",
     "awscli-local>=0.22.0",
-    "types-boto3[bedrock,bedrock-agent,bedrock-agent-runtime]>=1.37.33",
+    "types-boto3[dynamodb,lambda,s3]>=1.37.33",
 ]
 
 [tool.mypy]

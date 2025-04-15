@@ -323,6 +323,19 @@ wheels = [
 ]
 
 [[package]]
+name = "croniter"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+    { name = "pytz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ad/2f/44d1ae153a0e27be56be43465e5cb39b9650c781e001e7864389deb25090/croniter-6.0.0.tar.gz", hash = "sha256:37c504b313956114a983ece2c2b07790b1f1094fe9d81cc94739214748255577", size = 64481 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/4b/290b4c3efd6417a8b0c284896de19b1d5855e6dbdb97d2a35e68fa42de85/croniter-6.0.0-py2.py3-none-any.whl", hash = "sha256:2f878c3856f17896979b2a4379ba1f09c83e374931ea15cc835c5dd2eee9b368", size = 25468 },
+]
+
+[[package]]
 name = "deprecated"
 version = "1.2.18"
 source = { registry = "https://pypi.org/simple" }
@@ -1125,6 +1138,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pytz"
+version = "2025.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/bf/abbd3cdfb8fbc7fb3d4d38d320f2441b1e7cbe29be4f23797b4a2b5d8aac/pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3", size = 320884 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00", size = 509225 },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1330,44 +1352,32 @@ wheels = [
 ]
 
 [package.optional-dependencies]
-bedrock = [
-    { name = "types-boto3-bedrock" },
+dynamodb = [
+    { name = "types-boto3-dynamodb" },
 ]
-bedrock-agent = [
-    { name = "types-boto3-bedrock-agent" },
-]
-bedrock-agent-runtime = [
-    { name = "types-boto3-bedrock-agent-runtime" },
+lambda = [
+    { name = "types-boto3-lambda" },
 ]
 s3 = [
     { name = "types-boto3-s3" },
 ]
 
 [[package]]
-name = "types-boto3-bedrock"
-version = "1.37.29"
+name = "types-boto3-dynamodb"
+version = "1.37.33"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c9/ca/a51217ac46cda07705f5aa0345a1e9a3a0fdba58a0e78ee42a32f0a5ba56/types_boto3_bedrock-1.37.29.tar.gz", hash = "sha256:f42b098d98d606596c18149ddc5eca652b6e98c622a86380088bffa7c22e95a9", size = 43068 }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/b8/0749f6ec0f42de9f256ffb3a356c9dd9a5122e548b1b412aaa29b8a486f0/types_boto3_dynamodb-1.37.33.tar.gz", hash = "sha256:f642daa2781396115dd2d327e58c9cb2ee0e3f71929e14cb215f7948cb0b09ff", size = 47121 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/96/864a7f684183fefb0c6d97ee1b103f9d858e7aaddb48efb651b1ea6e04be/types_boto3_bedrock-1.37.29-py3-none-any.whl", hash = "sha256:c7b0dc4af1d0a17fba620a8615a223848875a7e6a8ad8647f77ef077ade482a0", size = 48457 },
+    { url = "https://files.pythonhosted.org/packages/47/4b/4bf5f2baf3eba757fee1fa9c2299afbccc5cdc5ebd8197c83f0668488c76/types_boto3_dynamodb-1.37.33-py3-none-any.whl", hash = "sha256:3ee37414241470274e1d38273ccef0f8f037d20eca8a95d90a41b0f01ff7ce5e", size = 56190 },
 ]
 
 [[package]]
-name = "types-boto3-bedrock-agent"
-version = "1.37.27"
+name = "types-boto3-lambda"
+version = "1.37.16"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/70/19/47ee7d44c494f1515f0182326ceb9f52409b9bda97dce2e96fe6e8f2df7c/types_boto3_bedrock_agent-1.37.27.tar.gz", hash = "sha256:49d63f2426a2019b8ff8ecb687aa47cfdc1a92d4a1d9a3e8d9974c8b232469dd", size = 51313 }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/04/ff510efe77867b431c17a4d63f9d9dadc9fd89b97b9e6c14e34ae56a10ff/types_boto3_lambda-1.37.16.tar.gz", hash = "sha256:e388adf2dd82e9ab2884d2e52f2fe24731b8521c0595220e99dea435843204a7", size = 41439 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/8c/3eb7b6b5a6c8ae151b3debf3ba6b09473e282c765bdfb4e5fc3593bc8f4b/types_boto3_bedrock_agent-1.37.27-py3-none-any.whl", hash = "sha256:7e4c16d008263d30d7e9e0a9f8f80ad1323cc4e523ea9f8f7e5876a287300a81", size = 57283 },
-]
-
-[[package]]
-name = "types-boto3-bedrock-agent-runtime"
-version = "1.37.22"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/05/b5/14853247fbc243c3277002d71d6c3b08a7b7f45a9d1c6e0145316eca5023/types_boto3_bedrock_agent_runtime-1.37.22.tar.gz", hash = "sha256:0b943d83c2d16a8d7fac5a3084a48b7a40f6bb9c30fc908b6252ad75cbaa4e90", size = 38497 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/de/b1/df69eb546acb6f00728987e61f021b9f2a0991fcae738f6cfbcfe1b87eb4/types_boto3_bedrock_agent_runtime-1.37.22-py3-none-any.whl", hash = "sha256:0e0321b7769098c9e17b3b80400b3f25cebf00dcdde3912788707a6a6d281ec8", size = 46293 },
+    { url = "https://files.pythonhosted.org/packages/a2/74/07a41d0e7239169dd49b4dc58d3aca58be7ef69eb1eb5e78061855ba4d6d/types_boto3_lambda-1.37.16-py3-none-any.whl", hash = "sha256:d4c040beb3418f8f10d4faa65d09435311a15249f47b19cca9610f26ced4ac4b", size = 48019 },
 ]
 
 [[package]]
@@ -1450,6 +1460,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "anyio" },
     { name = "asgi-correlation-id" },
+    { name = "croniter" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "mangum" },
@@ -1470,7 +1481,7 @@ dev = [
     { name = "pylance" },
     { name = "pyright" },
     { name = "ruff" },
-    { name = "types-boto3", extra = ["bedrock", "bedrock-agent", "bedrock-agent-runtime"] },
+    { name = "types-boto3", extra = ["dynamodb", "lambda", "s3"] },
     { name = "uvicorn" },
 ]
 
@@ -1478,12 +1489,13 @@ dev = [
 requires-dist = [
     { name = "anyio", specifier = ">=4.9.0" },
     { name = "asgi-correlation-id", specifier = ">=4.3.4" },
+    { name = "croniter", specifier = ">=6.0.0" },
     { name = "fastapi", specifier = ">=0.115.11" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mangum", specifier = ">=0.19.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-ai", specifier = ">=0.0.40" },
-    { name = "pydantic-ai-slim", extras = ["duckduckgo", "gemini", "openai"], specifier = ">=0.0.55" },
+    { name = "pydantic-ai-slim", extras = ["duckduckgo", "openai"], specifier = ">=0.0.55" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
     { name = "pynamodb", specifier = ">=6.0.2" },
     { name = "types-boto3", extras = ["s3"], specifier = ">=1.37.33" },
@@ -1498,7 +1510,7 @@ dev = [
     { name = "pylance", specifier = ">=0.25.2" },
     { name = "pyright", specifier = ">=1.1.399" },
     { name = "ruff", specifier = ">=0.11.0" },
-    { name = "types-boto3", extras = ["bedrock", "bedrock-agent", "bedrock-agent-runtime"], specifier = ">=1.37.33" },
+    { name = "types-boto3", extras = ["dynamodb", "lambda", "s3"], specifier = ">=1.37.33" },
     { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 

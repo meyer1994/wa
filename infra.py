@@ -11,7 +11,9 @@ from constructs import Construct
 from wa.config import Config
 
 
-def dynamo_graph_widget(table: dynamodb.Table) -> cloudwatch.GraphWidget:
+def dynamo_graph_widget(
+    table: dynamodb.Table, *, size: int = 8
+) -> cloudwatch.GraphWidget:
     return cloudwatch.GraphWidget(
         title=f"Capacity - {table.table_name}",
         left=[
@@ -285,9 +287,10 @@ class WhatsAppStack(Stack):
 
         # Row 2
         dashboard.add_widgets(
-            dynamo_graph_widget(t_messages),
-            dynamo_graph_widget(t_events),
-            dynamo_graph_widget(t_tools),
+            dynamo_graph_widget(t_messages, size=6),
+            dynamo_graph_widget(t_events, size=6),
+            dynamo_graph_widget(t_tools, size=6),
+            dynamo_graph_widget(t_cron, size=6),
         )
 
         # Row 3
