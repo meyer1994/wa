@@ -86,11 +86,22 @@ agent = Agent(deps_type=State)
 @agent.system_prompt
 def system_prompt(ctx: Context):
     logger.info("system_prompt(%s)", ctx.deps.cron.id)
-    return """You help with managing cron jobs"""
+    now = dt.datetime.now(dt.UTC)
+    return f"""
+    The current time is {now.isoformat()}.
+    You help with managing cron jobs.
+    You can create, delete, and fetch cron jobs.
+    """
 
 
 @agent.tool
-async def create_cron(ctx: Context, name: str, description: str, cron: str) -> str:
+async def create_cron(
+    ctx: Context,
+    name: str,
+    description: str,
+    cron: str,
+    content: str,
+) -> str:
     """
     Create a new cron job
 
@@ -98,6 +109,7 @@ async def create_cron(ctx: Context, name: str, description: str, cron: str) -> s
         name (str): The name of the cron job
         description (str): The description of the cron job
         cron (str): The cron expression of the cron job
+        content (str): The message you want to send when the cron job is executed
 
     Returns:
         str: The cron job that was created
@@ -111,7 +123,12 @@ async def create_cron(ctx: Context, name: str, description: str, cron: str) -> s
         index=len(ctx.deps.cron.data.items),
         cron=cron,
         next_run=iter.get_next(dt.datetime),
-        data={"name": name, "description": description},
+        data={
+            "name": name,
+            "description": description,
+            "content": content,
+            "to": ctx.deps.message.from_,
+        },
     )
 
     await job.asave()

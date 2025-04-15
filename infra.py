@@ -3,6 +3,8 @@ from aws_cdk import App, Duration, RemovalPolicy, Stack
 from aws_cdk import aws_apigateway as apigw
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_dynamodb as dynamodb
+from aws_cdk import aws_events as events
+from aws_cdk import aws_events_targets as targets
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
 from aws_cdk import aws_s3 as s3
@@ -184,11 +186,81 @@ class WhatsAppStack(Stack):
             ),
         )
 
+        function_cron = lambda_.Function(
+            self,
+            # meta
+            f"{id}-function-cron",
+            function_name=f"{id}-function-cron",
+            # code
+            handler="handler.cron_handler",
+            code=lambda_.Code.from_custom_command(
+                output="dist/lambda.zip",
+                command=["make", "clean", "build"],
+            ),
+            # runtime
+            runtime=lambda_.Runtime.PYTHON_3_13,
+            timeout=Duration.seconds(10),
+            memory_size=1024,
+            environment={
+                # dynamo
+                "DYNAMO_DB_TABLE_EVENTS": t_events.table_name,
+                "DYNAMO_DB_TABLE_MESSAGES": t_messages.table_name,
+                "DYNAMO_DB_TABLE_TOOLS": t_tools.table_name,
+                "DYNAMO_DB_TABLE_CRON": t_cron.table_name,
+                # s3
+                "AWS_S3_BUCKET_RAG": bucket.bucket_name,
+                # helicone
+                "HELICONE_API_KEY": cfg.HELICONE_API_KEY,
+                # whatsapp
+                "WHATSAPP_SENDER_ID": cfg.WHATSAPP_SENDER_ID,
+                "WHATSAPP_SENDER_NUMBER": cfg.WHATSAPP_SENDER_NUMBER,
+                "WHATSAPP_ACCESS_TOKEN": cfg.WHATSAPP_ACCESS_TOKEN,
+                "WHATSAPP_VERIFY_TOKEN": cfg.WHATSAPP_VERIFY_TOKEN,
+                "WHATSAPP_APP_SECRET": cfg.WHATSAPP_APP_SECRET,
+                # openai
+                "OPENAI_API_KEY": cfg.OPENAI_API_KEY,
+                # gemini
+                "GEMINI_API_KEY": cfg.GEMINI_API_KEY,
+            },
+            # debugging
+            profiling=True,  # not supported in docker image function
+            tracing=lambda_.Tracing.ACTIVE,
+            # logs
+            log_group=logs.LogGroup(
+                self,
+                f"{id}-function-cron-logs",
+                log_group_name=f"{id}-function-cron",
+                retention=logs.RetentionDays.THREE_DAYS,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
+        )
+
+        # Cron schedule (runs daily at 6:00 UTC)
+        rule = events.Rule(
+            self,
+            f"{id}-cron-rule",
+            schedule=events.Schedule.cron(
+                minute="*",
+                hour="*",
+                month="*",
+                week_day="*",
+                year="*",
+            ),
+        )
+
+        # makes it run every day at 6:00 UTC
+        rule.add_target(targets.LambdaFunction(function_cron))
+
         t_messages.grant_read_write_data(function)
+        t_messages.grant_read_write_data(function_cron)
         t_events.grant_read_write_data(function)
+        t_events.grant_read_write_data(function_cron)
         t_tools.grant_read_write_data(function)
+        t_tools.grant_read_write_data(function_cron)
         t_cron.grant_read_write_data(function)
+        t_cron.grant_read_write_data(function_cron)
         bucket.grant_read_write(function)
+        bucket.grant_read_write(function_cron)
 
         # Create API Gateway
         api = apigw.LambdaRestApi(

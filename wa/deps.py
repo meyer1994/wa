@@ -36,7 +36,7 @@ def dep_model(cfg: DepConfig) -> Model:
 
     logger.info("Using OpenAI model")
     return OpenAIModel(
-        model_name="gpt-4o-mini",
+        model_name="gpt-3.5-turbo",
         provider=OpenAIProvider(
             openai_client=AsyncOpenAI(
                 api_key=cfg.OPENAI_API_KEY,

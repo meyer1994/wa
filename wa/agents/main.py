@@ -118,7 +118,8 @@ async def agent_math(ctx: Context, prompt: str):
 @agent.tool
 async def agent_cron(ctx: Context, prompt: str):
     """
-    Handles cron job related operations through the cron agent.
+    Handles one-off cron jobs manager. EG: every job is executed once and then
+    deleted.
 
     Tools:
         - create_cron: Create a new cron job
