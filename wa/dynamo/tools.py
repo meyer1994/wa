@@ -27,7 +27,7 @@ class Tool(Model):
         return await loop.run_in_executor(None, self.save)
 
     @classmethod
-    def fetch(cls, id: str) -> Self:
+    def upsert(cls, id: str) -> Self:
         item = cls(id=id, tool=cls.NAME)
         try:
             item.refresh()
@@ -36,9 +36,9 @@ class Tool(Model):
             return item
 
     @classmethod
-    async def afetch(cls, id: str) -> Self:
+    async def aupsert(cls, id: str) -> Self:
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, cls.fetch, id)
+        return await loop.run_in_executor(None, cls.upsert, id)
 
     async def arefresh(self):
         loop = asyncio.get_event_loop()
@@ -59,3 +59,20 @@ class ToolTodo(Tool, discriminator="wa:tool:todo"):
     NAME = "TODO"
 
     data = ToolTodoState(default=ToolTodoState)
+
+
+class ToolCronItem(attr.MapAttribute):
+    index = attr.NumberAttribute()
+    name = attr.UnicodeAttribute()
+    description = attr.UnicodeAttribute()
+    cron = attr.UnicodeAttribute()
+
+
+class ToolCronState(attr.MapAttribute):
+    items = attr.ListAttribute(default=list, of=ToolCronItem)
+
+
+class ToolCron(Tool, discriminator="wa:tool:cron"):
+    NAME = "CRON"
+
+    data = ToolCronState(default=ToolCronState)

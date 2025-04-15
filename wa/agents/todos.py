@@ -1,9 +1,7 @@
+import io
 import logging
-from typing import Annotated
 
-from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.tools import ToolDefinition
 
 import wa.dynamo as db
 
@@ -13,76 +11,137 @@ logger = logging.getLogger(__name__)
 Context = RunContext[db.ToolTodo]
 
 
-class TodoItem(BaseModel):
-    """Represents a todo item."""
-
-    index: Annotated[int, Field(description="The index of the todo item.")]
-    title: Annotated[str, Field(description="The title of the todo item.")]
-    completed: Annotated[bool, Field(description="Whether the todo item is completed.")]
+agent = Agent(deps_type=db.ToolTodo)
 
 
-Result = TodoItem | list[TodoItem] | None | int
-
-agent: Agent[db.ToolTodo, Result] = Agent(
-    result_type=Result,
-    deps_type=db.ToolTodo,
-    system_prompt="You help with todo lists.",
-)
-
-
-async def prepare(ctx: Context, tool: ToolDefinition):
-    logger.info("prepare(%s)", ctx.deps.id)
-    await ctx.deps.arefresh()
-    return tool
-
-
-@agent.tool(prepare=prepare)
-async def create_todo(ctx: Context, title: str, completed: bool = False) -> TodoItem:
-    """Appends a new todo item to the list and returns the item"""
-    index = len(ctx.deps.data.items)
-    item = db.ToolTodoItem(index=index, title=title, completed=completed)
-    ctx.deps.data.items.append(item)
-    await ctx.deps.asave()
-    return TodoItem(index=index, title=title, completed=completed)
+@agent.system_prompt
+async def system(*args, **kwargs) -> str:
+    return "You help manage todo lists."
 
 
 @agent.tool
-async def complete_todo(ctx: Context, index: int) -> TodoItem | None:
-    """Completes a todo item and returns the item, if it exists."""
+async def create_todo(ctx: Context, title: str, completed: bool = False) -> str:
+    """Create a new todo item and append it to the list.
+
+    Args:
+        - ctx (Context): The context object containing the todo list data.
+        - title (str): The title/description of the todo item to create.
+        - completed (bool, optional): Initial completion status of the todo
+          item. Defaults to False.
+
+    Returns:
+        - str: A new todo item with the following attributes:
+            - index: Integer position in the list
+            - title: The provided title
+            - completed: The completion status
+    """
+    logger.info("create_todo(%s): %s", ctx.deps.id, title)
+    index = len(ctx.deps.data.items)
+    item = db.ToolTodoItem(index=index, title=title, completed=completed)
+    ctx.deps.data.items.append(item)
+    return "\n".join(
+        [
+            "Todo created:",
+            f"- {item.index=}",
+            f"- {item.title=}",
+            f"- {item.completed=}",
+        ]
+    )
+
+
+@agent.tool
+async def complete_todo(ctx: Context, index: int) -> str | None:
+    """Mark a todo item as completed by its index.
+
+    Args:
+        - ctx (Context): The context object containing the todo list data.
+        - index (int): The index of the todo item to complete.
+
+    Returns:
+        - str | None: The completed todo item if found, None if no item
+          exists at the given index. When found, returns TodoItem with:
+            - index: Original index
+            - title: Original title
+            - completed: Always True
+    """
+    logger.info("complete_todo(%s): %s", ctx.deps.id, index)
     item = next((i for i in ctx.deps.data.items if i.index == index), None)
 
     if item is None:
         return None
 
     item.completed = True
-    await ctx.deps.asave()
-    return TodoItem(index=index, title=item.title, completed=True)
+    return "\n".join(
+        [
+            "Todo completed:",
+            f"- {item.index=}",
+            f"- {item.title=}",
+            f"- {item.completed=}",
+        ]
+    )
 
 
 @agent.tool
-async def remove_todo(ctx: Context, index: int) -> TodoItem | None:
-    """Removes a todo item and returns the item, if it exists."""
+async def remove_todo(ctx: Context, index: int) -> str | None:
+    """Remove a todo item from the list by its index.
+
+    Args:
+        - ctx (Context): The context object containing the todo list data.
+        - index (int): The index of the todo item to remove.
+
+    Returns:
+        - str | None: The removed todo item if found, None if no item
+          exists at the given index. When found, returns the TodoItem with its
+          original attributes before removal.
+    """
+    logger.info("remove_todo(%s): %s", ctx.deps.id, index)
     item = next((i for i in ctx.deps.data.items if i.index == index), None)
 
     if item is None:
         return None
 
     ctx.deps.data.items = [i for i in ctx.deps.data.items if i.index != index]
-    await ctx.deps.asave()
-    return TodoItem(index=index, title=item.title, completed=item.completed)
+    return "\n".join(
+        [
+            "Todo removed:",
+            f"- {item.index=}",
+            f"- {item.title=}",
+            f"- {item.completed=}",
+        ]
+    )
 
 
 @agent.tool
-async def list_todos(ctx: Context) -> list[TodoItem]:
-    """Lists all todo items and returns them."""
-    items = []
-    for i in ctx.deps.data.items:
-        item = TodoItem(index=int(i.index), title=i.title, completed=i.completed)
-        items.append(item)
-    return items
+async def list_todos(ctx: Context) -> str | None:
+    """Retrieve all todo items in the list.
+
+    Args:
+        ctx (Context): The context object containing the todo list data.
+
+    Returns:
+        str: A list of all todo items. None if there are no todos.
+    """
+    logger.info("list_todos(%s)", ctx.deps.id)
+
+    if len(ctx.deps.data.items) == 0:
+        return None
+
+    with io.StringIO() as sio:
+        for i in sorted(ctx.deps.data.items, key=lambda x: x.index):
+            sio.write(f"- {i.index=} {i.completed=} {i.title=}\n")
+
+        return sio.getvalue()
 
 
 @agent.tool
-async def count_todos(ctx: Context) -> int:
-    """Counts all todo items and returns the number."""
-    return len(ctx.deps.data.items)
+async def count_todos(ctx: Context) -> str:
+    """Count the total number of todo items in the list.
+
+    Args:
+        - ctx (Context): The context object containing the todo list data.
+
+    Returns:
+        - int: The total number of todo items in the list.
+    """
+    logger.info("count_todos(%s)", ctx.deps.id)
+    return f"Total todos: {len(ctx.deps.data.items)}"

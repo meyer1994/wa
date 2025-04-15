@@ -56,7 +56,7 @@ class Message(Model):
                 raise ValueError(f"Unknown message kind: {i.kind}")
         self.agent["messages"] = messages
 
-    def latest(self, limit: int = 10) -> list[ModelMessage]:
+    def latest(self, limit: int = 100) -> list[ModelMessage]:
         query = self.query(hash_key=self.from_, limit=limit, scan_index_forward=False)
         messages = itertools.chain.from_iterable(i.model_messages for i in query)
         return list(messages)

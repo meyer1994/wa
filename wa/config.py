@@ -43,6 +43,9 @@ class Config(BaseSettings):
     GEMINI_API_KEY: str
     """Google Gemini API key"""
 
+    DYNAMO_DB_TABLE_CRON: str
+    """DynamoDB table name for cron jobs"""
+
     DYNAMO_DB_HOST: str | None = None
     """DynamoDB host. Used for local development"""
 

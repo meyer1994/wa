@@ -77,12 +77,17 @@ class Handler:
                 )
             )
 
-            history = await tg.create_task(message.alatest())
+            f_history = tg.create_task(message.alatest())
+            f_todo = tg.create_task(db.ToolTodo.aupsert(data.from_))
+            f_cron = tg.create_task(db.ToolCron.aupsert(data.from_))
 
-        tool_todo = await db.ToolTodo.afetch(data.from_)
+        history = await f_history
+        tool_todo = await f_todo
+        tool_cron = await f_cron
         logger.info(f"{tool_todo.data=}")
+        logger.info(f"{tool_cron.data=}")
 
-        context = State(todo=tool_todo)
+        context = State(todo=tool_todo, cron=tool_cron, message=data)
 
         result = await self.agent.run(
             user_prompt=message.body,

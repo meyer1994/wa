@@ -67,6 +67,18 @@ tables:
 		--provisioned-throughput \
 			ReadCapacityUnits=1,WriteCapacityUnits=1 \
 	| tee
+	awslocal dynamodb create-table \
+		--table-name 'CRON_TABLE' \
+		--attribute-definitions \
+			AttributeName=id,AttributeType=S \
+			AttributeName=index,AttributeType=N \
+		--key-schema \
+			AttributeName=id,KeyType=HASH \
+			AttributeName=index,KeyType=RANGE \
+		--provisioned-throughput \
+			ReadCapacityUnits=1,WriteCapacityUnits=1 \
+	| tee
+
 
 bucket:
 	awslocal s3 mb s3://rag-bucket | tee
