@@ -1,88 +1,113 @@
-import logging
-from typing import Annotated
+import io
 
-from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.tools import ToolDefinition
 
 import wa.dynamo as db
 
-logger = logging.getLogger(__name__)
-
-
 Context = RunContext[db.ToolTodo]
 
-
-class TodoItem(BaseModel):
-    """Represents a todo item."""
-
-    index: Annotated[int, Field(description="The index of the todo item.")]
-    title: Annotated[str, Field(description="The title of the todo item.")]
-    completed: Annotated[bool, Field(description="Whether the todo item is completed.")]
+agent: Agent[db.ToolTodo, str] = Agent()
 
 
-Result = TodoItem | list[TodoItem] | None | int
-
-agent: Agent[db.ToolTodo, Result] = Agent(
-    result_type=Result,
-    deps_type=db.ToolTodo,
-    system_prompt="You help with todo lists.",
-)
-
-
-async def prepare(ctx: Context, tool: ToolDefinition):
-    logger.info("prepare(%s)", ctx.deps.id)
-    await ctx.deps.arefresh()
-    return tool
-
-
-@agent.tool(prepare=prepare)
-async def create_todo(ctx: Context, title: str, completed: bool = False) -> TodoItem:
-    """Appends a new todo item to the list and returns the item"""
-    index = len(ctx.deps.data.items)
-    item = db.ToolTodoItem(index=index, title=title, completed=completed)
-    ctx.deps.data.items.append(item)
-    await ctx.deps.asave()
-    return TodoItem(index=index, title=title, completed=completed)
+@agent.system_prompt
+async def system_prompt(ctx: Context) -> str:
+    return "You help manage todo lists."
 
 
 @agent.tool
-async def complete_todo(ctx: Context, index: int) -> TodoItem | None:
-    """Completes a todo item and returns the item, if it exists."""
-    item = next((i for i in ctx.deps.data.items if i.index == index), None)
+async def create_todo(ctx: Context, title: str, completed: bool = False) -> str:
+    """
+    Appends a new todo item to the list.
+
+    Args:
+        title: The title of the todo item.
+        completed: Whether the todo item is initially completed (defaults to False).
+    """
+    item = ctx.deps.add_item(title, completed)
+    return "\n".join(
+        [
+            "Created todo:",
+            f"{item.title=}",
+            f"{item.index=}",
+            f"{item.completed=}",
+        ]
+    )
+
+
+@agent.tool
+async def mark_todo(ctx: Context, index: int, completed: bool = True) -> str:
+    """
+    Marks a todo item as complete or incomplete.
+
+    Args:
+        index: The index of the todo item to complete.
+        completed: Whether the todo item is completed (defaults to True).
+    """
+    items = (i for i in ctx.deps.data.items if i.index == index)
+    item = next(items, None)
 
     if item is None:
-        return None
+        return f"Error: Todo item with index {index} not found."
 
-    item.completed = True
-    await ctx.deps.asave()
-    return TodoItem(index=index, title=item.title, completed=True)
+    item.completed = completed
+
+    return "\n".join(
+        [
+            f"Marked todo as {completed=}:",
+            f"{item.title=}",
+            f"{item.index=}",
+            f"{item.completed=}",
+        ]
+    )
 
 
 @agent.tool
-async def remove_todo(ctx: Context, index: int) -> TodoItem | None:
-    """Removes a todo item and returns the item, if it exists."""
-    item = next((i for i in ctx.deps.data.items if i.index == index), None)
+async def remove_todo(ctx: Context, index: int) -> str:
+    """
+    Removes a todo item.
+
+    Args:
+        index: The index of the todo item to remove.
+    """
+    items = (i for i in ctx.deps.data.items if i.index == index)
+    item = next(items, None)
 
     if item is None:
-        return None
+        return f"Error: Todo item with index {index} not found."
 
-    ctx.deps.data.items = [i for i in ctx.deps.data.items if i.index != index]
-    await ctx.deps.asave()
-    return TodoItem(index=index, title=item.title, completed=item.completed)
+    item = ctx.deps.remove_item(index)
 
-
-@agent.tool
-async def list_todos(ctx: Context) -> list[TodoItem]:
-    """Lists all todo items and returns them."""
-    items = []
-    for i in ctx.deps.data.items:
-        item = TodoItem(index=int(i.index), title=i.title, completed=i.completed)
-        items.append(item)
-    return items
+    return "\n".join(
+        [
+            "Removed todo:",
+            f"{item.title=}",
+            f"{item.index=}",
+            f"{item.completed=}",
+        ]
+    )
 
 
 @agent.tool
-async def count_todos(ctx: Context) -> int:
-    """Counts all todo items and returns the number."""
-    return len(ctx.deps.data.items)
+async def list_todos(ctx: Context) -> str:
+    """Lists all todo items."""
+    if not ctx.deps.data.items:
+        return "The todo list is currently empty."
+
+    # Sort items by index for consistent ordering
+    ctx.deps.data.items.sort(key=lambda x: x.index)
+
+    with io.StringIO() as sio:
+        sio.write("Current Todo List:\n")
+        for item in ctx.deps.data.items:
+            sio.write("=====\n")
+            sio.write(f"{item.title=}\n")
+            sio.write(f"{item.index=}\n")
+            sio.write(f"{item.completed=}\n")
+        return sio.getvalue()
+
+
+@agent.tool
+async def count_todos(ctx: Context) -> str:
+    """Counts all todo items."""
+    count = len(ctx.deps.data.items)
+    return f"There are {count} todo items."

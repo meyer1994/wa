@@ -1,4 +1,5 @@
 import asyncio
+import datetime as dt
 import logging
 from typing import Any, Self
 
@@ -7,6 +8,10 @@ from pynamodb.exceptions import DoesNotExist
 from pynamodb.models import MetaProtocol, Model
 
 logger = logging.getLogger(__name__)
+
+
+def _now() -> dt.datetime:
+    return dt.datetime.now(dt.UTC)
 
 
 class Tool(Model):
@@ -33,6 +38,7 @@ class Tool(Model):
             item.refresh()
             return item
         except DoesNotExist:
+            item.save()
             return item
 
     @classmethod
@@ -59,3 +65,46 @@ class ToolTodo(Tool, discriminator="wa:tool:todo"):
     NAME = "TODO"
 
     data = ToolTodoState(default=ToolTodoState)
+
+    def add_item(self, title: str, completed: bool = False):
+        self.data.items.append(
+            ToolTodoItem(
+                index=len(self.data.items),
+                title=title,
+                completed=completed,
+            )
+        )
+        return self.data.items[-1]
+
+    def remove_item(self, index: int):
+        return self.data.items.pop(index)
+
+    def complete_item(self, index: int):
+        self.data.items[index].completed = True
+
+
+class ToolLogItem(attr.MapAttribute):
+    timestamp = attr.UTCDateTimeAttribute()
+    message = attr.UnicodeAttribute()
+
+
+class ToolLogState(attr.MapAttribute):
+    items = attr.ListAttribute(default=list, of=ToolLogItem)
+
+
+class ToolLog(Tool, discriminator="wa:tool:log"):
+    NAME = "LOG"
+
+    data = ToolLogState(default=ToolLogState)
+
+    def append_entry(self, message: str):
+        log = ToolLogItem(timestamp=_now(), message=message)
+        self.data.items.append(log)
+        return log
+
+    def list_entries(self, limit: int = 10):
+        self.data.items.sort(key=lambda x: x.timestamp, reverse=True)
+        return self.data.items[:limit]
+
+    def clear_entries(self):
+        self.data.items = []

@@ -1,8 +1,22 @@
 from wa.config import Config
 
 from .messages import Message, MessageDocument, MessageImage, MessageText
-from .tools import Tool, ToolTodo, ToolTodoItem
+from .tools import Tool, ToolLog, ToolTodo, ToolTodoItem
 from .whatsapp import WhatsAppItem, WhatsAppMessage, WhatsAppStatus
+
+__all__ = [
+    "Message",
+    "MessageDocument",
+    "MessageImage",
+    "MessageText",
+    "Tool",
+    "ToolLog",
+    "ToolTodo",
+    "ToolTodoItem",
+    "WhatsAppItem",
+    "WhatsAppMessage",
+    "WhatsAppStatus",
+]
 
 
 def init(cfg: Config):

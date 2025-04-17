@@ -80,9 +80,11 @@ class Handler:
             history = await tg.create_task(message.alatest())
 
         tool_todo = await db.ToolTodo.afetch(data.from_)
+        tool_log = await db.ToolLog.afetch(data.from_)
         logger.info(f"{tool_todo.data=}")
+        logger.info(f"{tool_log.data=}")
 
-        context = State(todo=tool_todo)
+        context = State(todo=tool_todo, log=tool_log)
 
         result = await self.agent.run(
             user_prompt=message.body,

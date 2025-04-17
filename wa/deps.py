@@ -7,7 +7,9 @@ from fastapi import Body, Depends, Header, HTTPException, Request
 from openai import AsyncOpenAI
 from pydantic_ai import Agent
 from pydantic_ai.models import Model
+from pydantic_ai.models.gemini import GeminiModel
 from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.google_gla import GoogleGLAProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 
 import wa.agents as agents
@@ -27,12 +29,12 @@ DepConfig = Annotated[Config, Depends(dep_config)]
 
 
 def dep_model(cfg: DepConfig) -> Model:
-    # if cfg.GEMINI_API_KEY:
-    #     logger.info("Using Gemini model")
-    #     return GeminiModel(
-    #         model_name="gemini-2.0-flash",
-    #         provider=GoogleGLAProvider(api_key=cfg.GEMINI_API_KEY),
-    #     )
+    if cfg.GEMINI_API_KEY:
+        logger.info("Using Gemini model")
+        return GeminiModel(
+            model_name="gemini-2.0-flash",
+            provider=GoogleGLAProvider(api_key=cfg.GEMINI_API_KEY),
+        )
 
     logger.info("Using OpenAI model")
     return OpenAIModel(
