@@ -1,11 +1,14 @@
 import io
+import logging
 
 from pydantic_ai import Agent, RunContext
 
 import wa.dynamo as db
 
-Context = RunContext[db.ToolTodo]
+logger = logging.getLogger(__name__)
 
+
+Context = RunContext[db.ToolTodo]
 agent: Agent[db.ToolTodo, str] = Agent()
 
 
@@ -23,6 +26,7 @@ async def create_todo(ctx: Context, title: str, completed: bool = False) -> str:
         title: The title of the todo item.
         completed: Whether the todo item is initially completed (defaults to False).
     """
+    logger.info("create_todo(%s): %s", ctx.deps.id, title)
     item = ctx.deps.add_item(title, completed)
     return "\n".join(
         [
@@ -43,6 +47,7 @@ async def mark_todo(ctx: Context, index: int, completed: bool = True) -> str:
         index: The index of the todo item to complete.
         completed: Whether the todo item is completed (defaults to True).
     """
+    logger.info("mark_todo(%s): %s", ctx.deps.id, index)
     items = (i for i in ctx.deps.data.items if i.index == index)
     item = next(items, None)
 
@@ -69,6 +74,7 @@ async def remove_todo(ctx: Context, index: int) -> str:
     Args:
         index: The index of the todo item to remove.
     """
+    logger.info("remove_todo(%s): %s", ctx.deps.id, index)
     items = (i for i in ctx.deps.data.items if i.index == index)
     item = next(items, None)
 
@@ -90,6 +96,7 @@ async def remove_todo(ctx: Context, index: int) -> str:
 @agent.tool
 async def list_todos(ctx: Context) -> str:
     """Lists all todo items."""
+    logger.info("list_todos(%s)", ctx.deps.id)
     if not ctx.deps.data.items:
         return "The todo list is currently empty."
 
@@ -109,5 +116,6 @@ async def list_todos(ctx: Context) -> str:
 @agent.tool
 async def count_todos(ctx: Context) -> str:
     """Counts all todo items."""
+    logger.info("count_todos(%s)", ctx.deps.id)
     count = len(ctx.deps.data.items)
     return f"There are {count} todo items."
