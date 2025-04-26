@@ -13,8 +13,8 @@ from pydantic_ai.providers.google_gla import GoogleGLAProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 
 import wa.agents as agents
+from wa.blob import Store
 from wa.config import Config
-from wa.store import Store
 from wa.whats.client import WhatsApp
 from wa.whats.models import Webhook
 

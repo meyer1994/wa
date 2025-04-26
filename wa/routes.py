@@ -12,7 +12,7 @@ import wa.deps as deps
 import wa.dynamo as db
 import wa.whats.models as models
 from wa.agents import State
-from wa.store import Store
+from wa.blob import Store
 from wa.whats.client import WhatsApp
 
 logger = logging.getLogger(__name__)
