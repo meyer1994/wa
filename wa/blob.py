@@ -1,53 +1,12 @@
 import asyncio
-import datetime as dt
 import functools
 import logging
 from dataclasses import dataclass
 from typing import IO
 
-from pydantic import BaseModel, model_serializer
 from types_boto3_s3.service_resource import Bucket
 
 logger = logging.getLogger(__name__)
-
-
-class Metadata(BaseModel):
-    from_: str
-    timestamp: dt.datetime
-    type: str
-
-    @model_serializer
-    def _model_serializer(self) -> dict:
-        return {
-            "metadataAttributes": {
-                "from": {
-                    "value": {"type": "STRING", "stringValue": self.from_},
-                    "includeForEmbedding": True,
-                },
-                "timestamp": {
-                    "value": {
-                        "type": "NUMBER",
-                        "numberValue": int(self.timestamp.timestamp()),
-                    },
-                    "includeForEmbedding": True,
-                },
-                "type": {
-                    "value": {"type": "STRING", "stringValue": self.type},
-                    "includeForEmbedding": True,
-                },
-            }
-        }
-
-
-class MetadataImage(BaseModel):
-    type: str
-    from_: str
-    timestamp: dt.datetime
-    mime_type: str
-
-    @model_serializer
-    def _model_serializer(self) -> dict:
-        return {"type": self.type, "from": self.from_, "timestamp": self.timestamp}
 
 
 @dataclass
