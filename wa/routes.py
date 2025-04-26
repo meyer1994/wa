@@ -127,7 +127,7 @@ class Handler:
             tg.create_task(self.store.save(key, media, data.image.mime_type))
             url = await tg.create_task(self.store.presigned(key))
 
-        REPLACE_HOST = "3d8f15ab012cae6a929ddfcf9c5ae32d.serveo.net"
+        REPLACE_HOST = "f3da984dfb9f82e8dba931477dccdd3d.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
         prompt: list[UserContent] = [ImageUrl(url=url)]
@@ -173,7 +173,7 @@ class Handler:
         # stop here as it does not work with openai
         # return
 
-        REPLACE_HOST = "3d8f15ab012cae6a929ddfcf9c5ae32d.serveo.net"
+        REPLACE_HOST = "f3da984dfb9f82e8dba931477dccdd3d.serveo.net"
         url = url.replace("localhost:4566", REPLACE_HOST)
 
         prompt: list[DocumentUrl | str] = [DocumentUrl(url=url)]
